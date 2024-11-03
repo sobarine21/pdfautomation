@@ -10,6 +10,9 @@ import numpy as np
 import re
 from wordcloud import WordCloud
 from collections import Counter
+from textstat import flesch_reading_ease
+from transformers import pipeline
+from pptx import Presentation
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
