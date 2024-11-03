@@ -12,6 +12,7 @@ from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
+import re  # Added for regex operations
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -230,14 +231,6 @@ def simple_sentiment_analysis(text):
     
     return positive_count - negative_count
 
-# Keyword Cloud Generation
-def generate_word_cloud(text):
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(plt)
-
 # Keyword Extraction using TF-IDF
 @st.cache
 def keyword_extraction_tfidf(text):
@@ -247,6 +240,29 @@ def keyword_extraction_tfidf(text):
     dense = tfidf_matrix.todense()
     denselist = dense.tolist()
     return pd.DataFrame(denselist, columns=feature_names).T.sort_values(0, ascending=False).head(10)
+
+# Function to extract emails
+def extract_emails(text):
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    return re.findall(email_pattern, text)
+
+# Function to count emails
+def count_emails(text):
+    return len(extract_emails(text))
+
+# Function to extract links
+def extract_links(text):
+    url_pattern = r'https?://[^\s]+'
+    return re.findall(url_pattern, text)
+
+# Function to count links
+def count_links(text):
+    return len(extract_links(text))
+
+# Function to extract dates
+def extract_dates(text):
+    date_pattern = r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'
+    return re.findall(date_pattern, text)
 
 # Main application logic
 if uploaded_files:
