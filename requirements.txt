@@ -9,9 +9,9 @@ seaborn
 python-docx
 beautifulsoup4
 wordcloud
-docx
+python-docx
 bs4
 wordcloud
 nltk
 pyspellchecker
-indexer
+
