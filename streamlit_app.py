@@ -118,8 +118,11 @@ def display_jargon_finder(text):
 from transformers import pipeline
 paraphraser = pipeline("text2text-generation", model="Vamsi/T5_Paraphrase_Paws")
 
+from transformers import BertTokenizer
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
 def paraphrase_text(text):
-    paraphrased = paraphraser(text, num_return_sequences=1)[0]["generated_text"]
+    paraphrased = paraphraser(text, max_length=50, min_length=25, do_sample=False)[0]["summary_text"]
     return paraphrased
 def detect_tone(text):
     # Simple example, more advanced techniques would use NLP models
