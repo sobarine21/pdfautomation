@@ -20,6 +20,19 @@ from nltk import ngrams
 st.title("Enhanced Document Analysis App")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
+def simple_sentiment_analysis(text):
+    # Very basic sentiment analysis function
+    positive_words = set(["happy", "good", "great", "excellent", "positive", "wonderful", "amazing", "love"])
+    negative_words = set(["sad", "bad", "terrible", "horrible", "negative", "hate", "awful"])
+    
+    score = 0
+    for word in text.split():
+        if word.lower() in positive_words:
+            score += 1
+        elif word.lower() in negative_words:
+            score -= 1
+    return score
+
 def find_palindromes(text):
     words = text.split()
     palindromes = [word for word in words if word == word[::-1] and len(word) > 2]
@@ -222,7 +235,7 @@ def display_tfidf_analysis(text):
 
 def text_highlighting(text, terms):
     for term in terms:
-        text = text.replace(term, f"**{term}**")
+        text = text.replace(term.strip(), f"**{term.strip()}**")  # Ensure stripping whitespace
     return text
 
 def display_highlighted_text(text):
@@ -240,6 +253,7 @@ def text_to_speech(text):
 # Main app logic
 if uploaded_files:
     for uploaded_file in uploaded_files:
+        cleaned_text = ""
         if uploaded_file.type == "application/pdf":
             # Read PDF content
             doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
@@ -302,4 +316,5 @@ if uploaded_files:
         if uploaded_file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
             st.download_button("Download Generated Presentation", create_presentation_from_text(cleaned_text))
 
+        # Optionally generate a word cloud
         generate_word_cloud(cleaned_text)
