@@ -4,7 +4,7 @@ import fitz  # PyMuPDF for PDF processing
 import pytesseract  # OCR
 from PIL import Image
 from sklearn.feature_extraction.text import TfidfVectorizer
-from textblob import TextBlob
+from textblob import TextBlob, Word, NotComplete
 import matplotlib.pyplot as plt
 import seaborn as sns
 from docx import Document
@@ -13,6 +13,14 @@ import numpy as np
 import re
 import os
 from wordcloud import WordCloud
+
+# Function to download TextBlob corpora if missing
+def ensure_textblob_corpora():
+    try:
+        # This will raise an error if corpora are missing
+        TextBlob("test").tags
+    except Exception as e:
+        st.error("TextBlob corpora are missing. Please run the following command in your terminal: `python -m textblob.download_corpora`.")
 
 # Set page configuration
 st.set_page_config(page_title="Ultimate Document Analysis Platform", layout="wide")
@@ -77,6 +85,8 @@ def generate_word_cloud(text):
 
 # Main application logic
 if uploaded_files:
+    ensure_textblob_corpora()  # Check for TextBlob corpora
+
     all_texts = []
     for uploaded_file in uploaded_files:
         text = extract_text(uploaded_file)
