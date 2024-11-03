@@ -7,6 +7,7 @@ textblob
 matplotlib
 seaborn
 python-docx
+en_core_web_sm
 beautifulsoup4
 wordcloud
 python-docx
