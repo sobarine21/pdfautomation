@@ -9,6 +9,15 @@ from bs4 import BeautifulSoup
 import numpy as np
 import re
 from wordcloud import WordCloud
+from collections import Counter
+import nltk
+from nltk import pos_tag, word_tokenize
+from nltk.corpus import stopwords
+
+# Uncomment these lines if you are running NLTK for the first time
+# nltk.download('punkt')
+# nltk.download('averaged_perceptron_tagger')
+# nltk.download('stopwords')
 
 # Set page configuration
 st.set_page_config(page_title="Ultimate Document Analysis Platform", layout="wide")
@@ -89,6 +98,34 @@ def extract_links(text):
 def extract_numbers(text):
     return re.findall(r'\b\d+\b', text)
 
+# Frequency Distribution of Words
+def word_frequency(text):
+    words = text.split()
+    word_counts = Counter(words)
+    return word_counts.most_common(10)
+
+# Part-of-Speech Tagging
+def pos_tagging(text):
+    words = word_tokenize(text)
+    return pos_tag(words)
+
+# Stop Words Removal
+def remove_stopwords(text):
+    stop_words = set(stopwords.words('english'))
+    words = text.split()
+    filtered_words = [word for word in words if word.lower() not in stop_words]
+    return ' '.join(filtered_words)
+
+# Visualizing Word Frequency
+def plot_word_frequency(word_counts):
+    words, counts = zip(*word_counts)
+    plt.figure(figsize=(10, 5))
+    sns.barplot(x=list(words), y=list(counts))
+    plt.xticks(rotation=45)
+    plt.title('Top 10 Most Frequent Words')
+    plt.ylabel('Frequency')
+    st.pyplot(plt)
+
 # Main application logic
 if uploaded_files:
     all_texts = []
@@ -138,6 +175,21 @@ if uploaded_files:
     st.write(extract_links(cleaned_text))
     st.subheader("Extracted Numbers")
     st.write(extract_numbers(cleaned_text))
+
+    # Word Frequency Distribution
+    st.subheader("Word Frequency Distribution")
+    word_counts = word_frequency(cleaned_text)
+    plot_word_frequency(word_counts)
+
+    # Part-of-Speech Tagging
+    st.subheader("Part-of-Speech Tagging")
+    pos_tags = pos_tagging(cleaned_text)
+    st.write(pos_tags)
+
+    # Stop Words Removal
+    st.subheader("Text After Stop Words Removal")
+    no_stopwords_text = remove_stopwords(cleaned_text)
+    st.write(no_stopwords_text)
 
     # Visualizations
     st.subheader("Data Visualizations")
