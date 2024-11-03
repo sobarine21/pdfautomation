@@ -116,7 +116,7 @@ def display_jargon_finder(text):
     jargon = find_jargon(text)
     st.write(", ".join(jargon))
 from transformers import pipeline
-paraphraser = pipeline("paraphrase-multilingual-MiniLM-L12")
+paraphraser = pipeline("text2text-generation", model="Vamsi/T5_Paraphrase_Paws")
 
 def paraphrase_text(text):
     paraphrased = paraphraser(text, num_return_sequences=1)[0]["generated_text"]
