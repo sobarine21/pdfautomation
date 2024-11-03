@@ -17,3 +17,7 @@ pyspellchecker
 textstat
 transformers
 python-pptx
+tensorflow
+torch 
+torchvision 
+torchaudio
