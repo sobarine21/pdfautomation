@@ -1,1 +1,7 @@
 streamlit
+fitz
+pandas
+re 
+numpy
+collections 
+Counter
