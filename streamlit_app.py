@@ -223,19 +223,15 @@ def simple_sentiment_analysis(text):
     
     return positive_count - negative_count
 
-# Keyword Cloud Generation
+# Word cloud generation
 def generate_word_cloud(text):
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     plt.figure(figsize=(10, 5))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
-    st.pyplot(plt)
+    st.pyplot()
 
-# Updated Email Extraction
-def extract_emails(text):
-    emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
-    return emails
-
+# Main logic
 if uploaded_files:
     for uploaded_file in uploaded_files:
         text = extract_text(uploaded_file)
@@ -253,7 +249,7 @@ if uploaded_files:
         display_style_analysis(cleaned_text)
 
         if uploaded_file.type == "application/pdf":
-            keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):")
+            keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):", key=f"keywords_{uploaded_file.name}")
             if keywords:
                 display_pdf_with_annotations(uploaded_file.name, keywords.split(","))
         
