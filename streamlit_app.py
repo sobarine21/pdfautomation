@@ -12,6 +12,7 @@ from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
+from spellchecker import SpellChecker
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -27,14 +28,14 @@ def display_palindromes(text):
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
 
-def count_sentences(text):
-    # Simple sentence counting based on '.', '!', and '?'
-    return text.count('.') + text.count('!') + text.count('?')
+def sentence_count(text):
+    # Counts the number of sentences in the text based on the presence of periods, exclamation marks, or question marks
+    sentences = re.split(r'[.!?]+', text)
+    return len([s for s in sentences if s.strip()])  # Return count of non-empty sentences
 
 def calculate_complexity(text):
-    num_sentences = count_sentences(text)
-    avg_sentence_length = len(text.split()) / num_sentences if num_sentences > 0 else 0
-    avg_word_length = sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0
+    avg_sentence_length = len(text.split()) / sentence_count(text)
+    avg_word_length = sum(len(word) for word in text.split()) / len(text.split())
     readability_score = flesch_reading_ease(text)
     return {
         "Average Sentence Length": avg_sentence_length,
@@ -71,9 +72,8 @@ def display_reading_time(text):
     st.write(f"Approximate Reading Time: {reading_time} minutes")
 
 def pos_tagging(text):
-    # Assumes 'nlp' is defined; you might need to integrate a model here
-    # Example placeholder for demonstration
-    return Counter([word for word in text.split()])  
+    # Placeholder for POS tagging function, as SpaCy is removed
+    return Counter()
 
 def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
@@ -88,11 +88,13 @@ def gendered_language_analysis(text):
     female_count = sum(text.lower().count(word) for word in female_words)
     
     if male_count > female_count:
-        return "More Male-Language Oriented"
+        result = "More Male-Language Oriented"
     elif female_count > male_count:
-        return "More Female-Language Oriented"
+        result = "More Female-Language Oriented"
     else:
-        return "Neutral Language"
+        result = "Neutral Language"
+    
+    return result
 
 def display_gendered_language(text):
     st.subheader("Gendered Language Analysis")
@@ -113,8 +115,8 @@ def display_section_sentiment(text):
     sentiment_by_section(text)
 
 def find_jargon(text):
-    common_words = set(text.split())  # Assuming common words are any words in the text
-    technical_words = set(word for word in text.split() if len(word) > 7 and word not in common_words)
+    common_words = set()  # Use a basic set instead of SpaCy stop words
+    technical_words = set(word for word in text.split() if len(word) > 7 and word.lower() not in common_words)
     return technical_words
 
 def display_jargon_finder(text):
@@ -123,7 +125,6 @@ def display_jargon_finder(text):
     st.write(", ".join(jargon))
 
 def detect_tone(text):
-    # Simple example, more advanced techniques would use NLP models
     if "!" in text:
         return "Casual/Excited"
     elif text.isupper():
@@ -133,10 +134,10 @@ def detect_tone(text):
 
 def create_presentation_from_text(text):
     prs = Presentation()
-    slides = text.split('\n\n')  # Splitting text into slides by paragraphs
+    slides = text.split('\n\n')
     for slide_content in slides:
         slide = prs.slides.add_slide(prs.slide_layouts[1])
-        title, content = slide_content[:30], slide_content[30:]  # First 30 chars as title
+        title, content = slide_content[:30], slide_content[30:]  
         slide.shapes.title.text = title
         slide.placeholders[1].text = content
     prs.save("generated_presentation.pptx")
@@ -206,17 +207,6 @@ def clean_text(text):
     text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
     return text.strip()
 
-# Text Statistics
-def text_statistics(text):
-    word_count = len(text.split())
-    num_sentences = count_sentences(text)  # Avoiding name conflict
-    character_count = len(text)
-    return {
-        "Word Count": word_count,
-        "Sentence Count": num_sentences,
-        "Character Count": character_count
-    }
-
 # Summarization
 def summarize_text(text, num_sentences=3):
     sentences = text.split('. ')
@@ -225,141 +215,55 @@ def summarize_text(text, num_sentences=3):
 # Simple sentiment analysis
 def simple_sentiment_analysis(text):
     words = text.split()
-    positive_words = ['good', 'great', 'excellent', 'happy', 'positive']
-    negative_words = ['bad', 'sad', 'terrible', 'angry', 'negative']
-    score = sum(1 for word in words if word in positive_words) - sum(1 for word in words if word in negative_words)
-    return score
+    positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'correct', 'superior'])
+    negative_words = set(['bad', 'poor', 'terrible', 'negative', 'unfortunate', 'wrong', 'inferior'])
+    
+    positive_count = sum(1 for word in words if word in positive_words)
+    negative_count = sum(1 for word in words if word in negative_words)
+    
+    return positive_count - negative_count
 
-# Extraction using TF-IDF
-@st.cache_data
-def keyword_extraction_tfidf(text):
-    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf_vectorizer.fit_transform([text])
-    feature_names = tfidf_vectorizer.get_feature_names_out()
-    dense = tfidf_matrix.todense()
-    denselist = dense.tolist()
-    return pd.DataFrame(denselist, columns=feature_names).T.sort_values(0, ascending=False).head(10)
-
-# Function to generate word cloud
+# Word cloud generation
 def generate_word_cloud(text):
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     plt.figure(figsize=(10, 5))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
-    st.pyplot(plt)
+    st.pyplot()
 
-# Function to extract emails
-def extract_emails(text):
-    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
-    return re.findall(email_pattern, text)
-
-# Function to count emails
-def count_emails(text):
-    return len(extract_emails(text))
-
-# Function to extract links
-def extract_links(text):
-    url_pattern = r'https?://[^\s]+'
-    return re.findall(url_pattern, text)
-
-# Function to count links
-def count_links(text):
-    return len(extract_links(text))
-
-# Function to extract dates
-def extract_dates(text):
-    date_pattern = r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'
-    return re.findall(date_pattern, text)
-
-# Main application logic
+# Main logic
 if uploaded_files:
-    all_texts = []
     for uploaded_file in uploaded_files:
         text = extract_text(uploaded_file)
-        if text:
-            all_texts.append(text)
+        cleaned_text = clean_text(text)
+        
+        # Displaying various analyses
+        display_palindromes(cleaned_text)
+        display_complexity(cleaned_text)
+        display_text_with_mood_color(cleaned_text)
+        display_reading_time(cleaned_text)
+        display_pos_tagging(cleaned_text)
+        display_gendered_language(cleaned_text)
+        display_section_sentiment(cleaned_text)
+        display_jargon_finder(cleaned_text)
+        display_style_analysis(cleaned_text)
 
-    full_text = "\n\n".join(all_texts)
-    
-    # Display the extracted text
-    st.subheader("Extracted Text")
-    st.write(full_text)
+        if uploaded_file.type == "application/pdf":
+            keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):", key=f"keywords_{uploaded_file.name}")
+            if keywords:
+                display_pdf_with_annotations(uploaded_file.name, keywords.split(","))
+        
+        if uploaded_file.type == "text/plain":
+            st.download_button("Download Cleaned Text", cleaned_text, "cleaned_text.txt")
+            st.download_button("Download Summary", summarize_text(cleaned_text), "summary.txt")
 
-    # Cleaned Text
-    cleaned_text = clean_text(full_text)
-    st.subheader("Cleaned Text")
-    st.write(cleaned_text)
+        if uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            st.download_button("Download Cleaned DOCX", cleaned_text, "cleaned_text.docx")
 
-    # Text Statistics
-    stats = text_statistics(cleaned_text)
-    st.subheader("Text Statistics")
-    st.json(stats)
+        if uploaded_file.type == "text/html":
+            st.download_button("Download Cleaned HTML", cleaned_text, "cleaned_text.html")
 
-    # Sentiment Analysis
-    sentiment_score = simple_sentiment_analysis(cleaned_text)
-    st.subheader("Sentiment Analysis")
-    st.write(f"Sentiment Score: {sentiment_score}")
+        if uploaded_file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            st.download_button("Download Generated Presentation", create_presentation_from_text(cleaned_text))
 
-    # Summary of Text
-    st.subheader("Text Summary")
-    summary = summarize_text(cleaned_text)  
-    st.write(summary)
-
-    # Keyword Extraction using TF-IDF
-    st.subheader("Keyword Extraction")
-    df_tfidf = keyword_extraction_tfidf(cleaned_text)
-    st.write(df_tfidf)
-
-    # Generate Word Cloud
-    st.subheader("Keyword Cloud")
-    generate_word_cloud(cleaned_text)
-
-    # Extracted Emails and Links
-    st.subheader("Extracted Emails")
-    emails = extract_emails(cleaned_text)
-    st.write(emails)
-    st.write(f"Total Emails: {count_emails(cleaned_text)}")
-
-    st.subheader("Extracted Links")
-    links = extract_links(cleaned_text)
-    st.write(links)
-    st.write(f"Total Links: {count_links(cleaned_text)}")
-
-    st.subheader("Extracted Dates")
-    dates = extract_dates(cleaned_text)
-    st.write(dates)
-
-    # Mood Display
-    display_text_with_mood_color(cleaned_text)
-
-    # Reading Time
-    display_reading_time(cleaned_text)
-
-    # Gendered Language
-    display_gendered_language(cleaned_text)
-
-    # Style Analysis
-    display_style_analysis(cleaned_text)
-
-    # Complexity
-    display_complexity(cleaned_text)
-
-    # Jargon Finder
-    display_jargon_finder(cleaned_text)
-
-    # Part-of-Speech Tagging
-    display_pos_tagging(cleaned_text)
-
-    # Section Sentiment
-    display_section_sentiment(cleaned_text)
-
-    # Presentation Generator
-    display_presentation_generator(cleaned_text)
-
-    # Download processed text if needed
-    st.sidebar.subheader("Download Processed Text")
-    if st.sidebar.button("Download"):
-        st.sidebar.download_button("Download Cleaned Text", cleaned_text)
-
-# Sidebar Title
-st.sidebar.text("Document Analysis App")
+        generate_word_cloud(cleaned_text)
