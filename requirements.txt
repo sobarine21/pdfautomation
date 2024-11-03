@@ -1,8 +1,4 @@
 streamlit
-fitz
-pandas
-re 
-numpy
-collections 
-Counter
 PyMuPDF
+pandas
+numpy
