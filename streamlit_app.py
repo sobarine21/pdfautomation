@@ -1,206 +1,149 @@
 import streamlit as st
-import fitz  # PyMuPDF
 import pandas as pd
-import re
-import numpy as np
-from collections import Counter
+import fitz  # PyMuPDF for PDF processing
+import pytesseract  # OCR
+from PIL import Image
 from sklearn.feature_extraction.text import TfidfVectorizer
 from textblob import TextBlob
+import matplotlib.pyplot as plt
+import seaborn as sns
+from docx import Document
+from bs4 import BeautifulSoup
+import numpy as np
+import re
+import os
 
-# Function to extract text from a PDF file
-def extract_text_from_pdf(pdf_file):
+# Set page configuration
+st.set_page_config(page_title="Advanced Document Analysis Platform", layout="wide")
+
+# Sidebar for file upload
+st.sidebar.title("Upload Document")
+uploaded_files = st.sidebar.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
+
+# Function to extract text from various formats
+def extract_text(file):
+    if file.type == "application/pdf":
+        return extract_text_from_pdf(file)
+    elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return extract_text_from_docx(file)
+    elif file.type == "text/plain":
+        return file.read().decode("utf-8")
+    elif file.type == "text/html":
+        return extract_text_from_html(file)
+
+# PDF extraction
+def extract_text_from_pdf(file):
     text = ""
-    with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
+    with fitz.open(stream=file.read(), filetype="pdf") as doc:
         for page in doc:
             text += page.get_text()
     return text
 
-# Function to extract data into a DataFrame
-def extract_data(text):
-    lines = text.splitlines()
-    data = [{"Line": line.strip()} for line in lines if line.strip()]
-    return pd.DataFrame(data)
+# DOCX extraction
+def extract_text_from_docx(file):
+    doc = Document(file)
+    text = "\n".join([para.text for para in doc.paragraphs])
+    return text
 
-# Function to search for keywords
-def search_keywords(text, keywords):
-    results = {keyword: len(re.findall(keyword, text, re.IGNORECASE)) for keyword in keywords}
-    return results
+# HTML extraction
+def extract_text_from_html(file):
+    soup = BeautifulSoup(file.read(), 'html.parser')
+    return soup.get_text()
 
-# Function to summarize text
-def summarize_text(text):
-    return "\n".join(text.splitlines()[:5])
-
-# Function to clean text
+# Additional utility functions
 def clean_text(text):
-    return re.sub(r'[^\w\s]', '', text)
+    # Remove special characters and extra whitespace
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'[^\w\s]', '', text)
+    return text.strip()
 
-# Function to count words
-def count_words(text):
-    return len(text.split())
+def summarize_text(text, num_sentences=3):
+    # Basic summarization (this can be improved)
+    sentences = text.split('. ')
+    return '. '.join(sentences[:num_sentences])
 
-# Function to count sentences
-def count_sentences(text):
-    return len(re.split(r'[.!?]+', text)) - 1
-
-# Function to count characters
-def count_characters(text):
-    return len(text)
-
-# Function to calculate reading time
-def calculate_reading_time(text):
-    words = count_words(text)
-    reading_speed = 200  # average reading speed (words per minute)
-    return round(words / reading_speed, 2)
-
-# Function to extract links
-def extract_links(text):
-    return re.findall(r'https?://\S+', text)
-
-# Function to extract emails
 def extract_emails(text):
     return re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
 
-# Function to find phone numbers
-def find_phone_numbers(text):
-    return re.findall(r'\+?\d[\d -]{8,12}\d', text)
+def extract_links(text):
+    return re.findall(r'https?://[^\s]+', text)
 
-# Function to extract dates
-def extract_dates(text):
-    return re.findall(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text)
+def extract_numbers(text):
+    return re.findall(r'\d+', text)
 
-# Function to extract unique words
-def extract_unique_words(text):
-    words = text.split()
-    unique_words = set(words)
-    return list(unique_words)
+# Main application logic
+if uploaded_files:
+    all_texts = []
+    for uploaded_file in uploaded_files:
+        text = extract_text(uploaded_file)
+        all_texts.append(text)
 
-# Function to calculate sentiment of text
-def calculate_sentiment(text):
-    analysis = TextBlob(text)
-    return analysis.sentiment.polarity
-
-# Function to extract top N keywords using TF-IDF
-def extract_top_n_keywords(text, n=10):
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform([text])
-    feature_names = vectorizer.get_feature_names_out()
-    tfidf_scores = tfidf_matrix.sum(axis=0).A1
-    top_n_indices = np.argsort(tfidf_scores)[-n:][::-1]
-    return {feature_names[i]: tfidf_scores[i] for i in top_n_indices}
-
-# Function to count paragraphs
-def count_paragraphs(text):
-    return len([p for p in text.split('\n\n') if p.strip()])
-
-# Function to calculate frequency distribution
-def frequency_distribution(text):
-    words = text.split()
-    return Counter(words).most_common(10)
-
-# Function to highlight keywords
-def highlight_keywords(text, keywords):
-    for keyword in keywords:
-        text = re.sub(f'({keyword})', r'**\1**', text, flags=re.IGNORECASE)
-    return text
-
-# Function to calculate readability
-def calculate_readability(text):
-    words = count_words(text)
-    sentences = count_sentences(text)
-    paragraphs = count_paragraphs(text)
+    full_text = "\n\n".join(all_texts)
     
-    if sentences > 0:
-        readability_score = 206.835 - (1.015 * (words / sentences)) - (84.6 * (paragraphs / sentences))
-    else:
-        readability_score = float('inf')
-    
-    return readability_score
-
-# Streamlit UI
-st.title("Advanced PDF Data Extraction and Analysis")
-st.write("Upload a PDF file to extract and analyze data.")
-
-uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
-
-if uploaded_file is not None:
-    text = extract_text_from_pdf(uploaded_file)
-
+    # Text Analysis Section
     st.subheader("Extracted Text")
-    st.write(text)
+    st.write(full_text)
 
-    data_df = extract_data(text)
-    st.subheader("Extracted Data")
-    st.dataframe(data_df)
-
-    keywords_input = st.text_input("Enter keywords to search (comma-separated):")
-    if keywords_input:
-        keywords = [k.strip() for k in keywords_input.split(',')]
-        keyword_results = search_keywords(text, keywords)
-        st.subheader("Keyword Search Results")
-        st.write(keyword_results)
-        highlighted_text = highlight_keywords(text, keywords)
-        st.subheader("Highlighted Text")
-        st.write(highlighted_text)
-
-    st.subheader("Text Summary")
-    st.write(summarize_text(text))
-
+    # Cleaned Text
+    cleaned_text = clean_text(full_text)
     st.subheader("Cleaned Text")
-    st.write(clean_text(text))
+    st.write(cleaned_text)
 
-    st.subheader("Text Statistics")
-    stats = {
-        "Word Count": count_words(text),
-        "Character Count": count_characters(text),
-        "Sentence Count": count_sentences(text),
-        "Paragraph Count": count_paragraphs(text),
-        "Unique Words": len(extract_unique_words(text)),
-        "Reading Time (minutes)": calculate_reading_time(text),
-        "Readability Score": calculate_readability(text),
-        "Sentiment Polarity": calculate_sentiment(text)
-    }
-    st.write(stats)
+    # Sentiment Analysis
+    st.subheader("Sentiment Analysis")
+    polarity = TextBlob(cleaned_text).sentiment.polarity
+    st.write(f"Sentiment Polarity: {polarity:.2f}")
 
-    st.subheader("Extracted Links")
-    st.write(extract_links(text))
+    # Summary of Text
+    st.subheader("Text Summary")
+    summary = summarize_text(cleaned_text)
+    st.write(summary)
 
+    # Keyword Extraction using TF-IDF
+    st.subheader("Keyword Extraction")
+    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf_vectorizer.fit_transform([cleaned_text])
+    feature_names = tfidf_vectorizer.get_feature_names_out()
+    dense = tfidf_matrix.todense()
+    denselist = dense.tolist()
+    df_tfidf = pd.DataFrame(denselist, columns=feature_names)
+    st.write(df_tfidf.T.sort_values(0, ascending=False).head(10))
+
+    # Email and Link Extraction
     st.subheader("Extracted Emails")
-    st.write(extract_emails(text))
+    st.write(extract_emails(cleaned_text))
+    st.subheader("Extracted Links")
+    st.write(extract_links(cleaned_text))
+    st.subheader("Extracted Numbers")
+    st.write(extract_numbers(cleaned_text))
 
-    st.subheader("Extracted Phone Numbers")
-    st.write(find_phone_numbers(text))
+    # Visualizations
+    st.subheader("Data Visualizations")
+    plt.figure(figsize=(6, 4))
+    sns.histplot([polarity], bins=10, kde=True)
+    plt.title("Sentiment Distribution")
+    st.pyplot(plt)
 
-    st.subheader("Extracted Dates")
-    st.write(extract_dates(text))
+    # Export Options
+    st.subheader("Export Options")
+    export_format = st.selectbox("Choose export format", ["CSV", "JSON", "Excel"])
+    if st.button("Export Data"):
+        if export_format == "CSV":
+            output = df_tfidf.to_csv(index=False)
+            st.download_button(label="Download CSV", data=output, file_name='keywords.csv', mime='text/csv')
+        elif export_format == "JSON":
+            output = df_tfidf.to_json()
+            st.download_button(label="Download JSON", data=output, file_name='keywords.json', mime='application/json')
+        elif export_format == "Excel":
+            output = df_tfidf.to_excel(index=False)
+            st.download_button(label="Download Excel", data=output, file_name='keywords.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-    st.subheader("Top N Keywords")
-    top_n_keywords = extract_top_n_keywords(text)
-    st.write(top_n_keywords)
+    # User Feedback Form
+    st.sidebar.markdown("### Feedback")
+    feedback = st.sidebar.text_area("Your Feedback:")
+    if st.sidebar.button("Submit Feedback"):
+        st.sidebar.success("Thank you for your feedback!")
 
-    st.subheader("Frequency Distribution of Words")
-    freq_dist = frequency_distribution(text)
-    st.write(freq_dist)
-
-    st.subheader("Unique Words")
-    st.write(extract_unique_words(text))
-
-    st.subheader("Extracted Dates")
-    st.write(extract_dates(text))
-
-    st.subheader("Sentence Splitting")
-    sentences = re.split(r'(?<=[.!?]) +', text)
-    st.write(sentences)
-
-    st.subheader("Extracted Tables")
-    st.write("Table extraction not implemented.")
-
-    st.subheader("Word Cloud")
-    st.write("Word cloud generation not implemented.")
-
-    csv = data_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Download extracted data as CSV",
-        data=csv,
-        file_name='extracted_data.csv',
-        mime='text/csv'
-    )
+# Help and Support Section
+st.sidebar.markdown("### Help")
+st.sidebar.write("For support, please contact us.")
