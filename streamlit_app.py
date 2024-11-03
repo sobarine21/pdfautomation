@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import fitz  # PyMuPDF for PDF processing
+import matplotlib.pyplot as plt
 from docx import Document
 from bs4 import BeautifulSoup
 import numpy as np
@@ -10,16 +11,15 @@ from collections import Counter
 from textstat import flesch_reading_ease, text_standard
 from pptx import Presentation
 from gtts import gTTS
-import matplotlib.pyplot as plt
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import jaccard_score
 from nltk import ngrams
 
 # Title and file uploader on the main page
-st.title("Sobarine Content Analysis SaaS")
+st.title("Enhanced Document Analysis App")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
-# Function Definitions
 def simple_sentiment_analysis(text):
     positive_words = set(["happy", "good", "great", "excellent", "positive", "wonderful", "amazing", "love"])
     negative_words = set(["sad", "bad", "terrible", "horrible", "negative", "hate", "awful"])
@@ -40,7 +40,7 @@ def find_palindromes(text):
 def display_palindromes(text):
     palindromes = find_palindromes(text)
     st.subheader("Palindromic Words")
-    st.write(", ".join(palindromes) if palindromes else "No palindromic words found.")
+    st.write(", ".join(palindromes))
 
 def sentence_count(text):
     sentences = re.split(r'[.!?]+', text)
@@ -54,7 +54,7 @@ def calculate_complexity(text):
         "Average Sentence Length": avg_sentence_length,
         "Average Word Length": avg_word_length,
         "Readability Score": readability_score,
-        "Text Standard": text_standard(text, float_output=True)
+        "Text Standard": text_standard(text, float_output=True)  # Additional readability measure
     }
 
 def display_complexity(text):
@@ -64,11 +64,11 @@ def display_complexity(text):
 
 def mood_color(score):
     if score > 5:
-        return "#A9DFBF"  # Light green for positive mood
+        return "#A9DFBF"  # light green for positive mood
     elif score < -5:
-        return "#F5B7B1"  # Light red for negative mood
+        return "#F5B7B1"  # light red for negative mood
     else:
-        return "#F9E79F"  # Light yellow for neutral mood
+        return "#F9E79F"  # light yellow for neutral mood
 
 def display_text_with_mood_color(text):
     sentiment_score = simple_sentiment_analysis(text)
@@ -84,6 +84,18 @@ def display_reading_time(text):
     reading_time = estimate_reading_time(text)
     st.subheader("Estimated Reading Time")
     st.write(f"Approximate Reading Time: {reading_time} minutes")
+
+def pos_tagging(text):
+    # Placeholder for POS tagging function
+    return Counter()
+
+def display_pos_tagging(text):
+    st.subheader("Part-of-Speech Analysis")
+    pos_counts = pos_tagging(text)
+    if pos_counts:
+        st.bar_chart(pd.DataFrame(pos_counts.values(), index=pos_counts.keys(), columns=["Count"]))
+    else:
+        st.write("No part-of-speech data available.")
 
 def gendered_language_analysis(text):
     male_words = ["he", "him", "his", "man", "men"]
@@ -127,7 +139,7 @@ def find_jargon(text):
 def display_jargon_finder(text):
     st.subheader("Technical Jargon")
     jargon = find_jargon(text)
-    st.write(", ".join(jargon) if jargon else "No jargon found.")
+    st.write(", ".join(jargon))
 
 def detect_tone(text):
     if "!" in text:
@@ -148,33 +160,24 @@ def create_presentation_from_text(text):
     prs.save("generated_presentation.pptx")
     return "generated_presentation.pptx"
 
-def extract_emails(text):
-    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
-    emails = re.findall(email_pattern, text)
-    return emails
-
-def display_email_extraction(text):
-    st.subheader("Email Addresses Found")
-    emails = extract_emails(text)
-    st.write(", ".join(emails) if emails else "No email addresses found.")
-
 def highlight_text_in_pdf(pdf_file, keywords):
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+    # Open the PDF and annotate it
+    doc = fitz.open(pdf_file)
     for page in doc:
         for keyword in keywords:
-            text_instances = page.search_for(keyword)
+            text_instances = page.search_for(keyword.strip())
             for inst in text_instances:
                 page.add_highlight_annot(inst)
-    annotated_pdf_path = "annotated_pdf.pdf"
+    # Save the annotated PDF
+    annotated_pdf_path = f"annotated_{os.path.basename(pdf_file.name)}"
     doc.save(annotated_pdf_path)
+    doc.close()  # Close the document to save changes
     return annotated_pdf_path
 
-def display_pdf_with_annotations(uploaded_file):
+def display_pdf_with_annotations(uploaded_file, keywords):
     st.subheader("Annotated PDF")
-    keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):", key=f"keywords_{uploaded_file.name}")
-    if keywords:
-        annotated_pdf = highlight_text_in_pdf(uploaded_file, keywords.split(","))
-        st.download_button("Download Annotated PDF", annotated_pdf)
+    annotated_pdf = highlight_text_in_pdf(uploaded_file, keywords)
+    st.download_button("Download Annotated PDF", annotated_pdf)
 
 def analyze_style(text):
     formal_words = set(['therefore', 'consequently', 'moreover', 'hence', 'furthermore'])
@@ -222,84 +225,113 @@ def display_frequency_distribution(text):
     freq_df = pd.DataFrame(freq_dist, columns=["Word", "Frequency"])
     st.bar_chart(freq_df.set_index("Word"))
 
-# Process each uploaded file
+def tfidf_analysis(text):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform([text])
+    feature_array = vectorizer.get_feature_names_out()
+    tfidf_sorting = np.argsort(tfidf_matrix.toarray()).flatten()[::-1]
+    return [(feature_array[i], tfidf_matrix[0, i]) for i in tfidf_sorting[:10]]
+
+def display_tfidf_analysis(text):
+    st.subheader("TF-IDF Analysis")
+    tfidf_results = tfidf_analysis(text)
+    tfidf_df = pd.DataFrame(tfidf_results, columns=["Term", "TF-IDF Score"])
+    st.bar_chart(tfidf_df.set_index("Term"))
+
+def text_highlighting(text, terms):
+    for term in terms:
+        text = text.replace(term.strip(), f"**{term.strip()}")  # Ensure stripping whitespace
+    return text
+
+def display_highlighted_text(text):
+    terms_to_highlight = st.text_input("Enter terms to highlight (comma separated):", "")
+    if terms_to_highlight:
+        highlighted_text = text_highlighting(text, terms_to_highlight.split(","))
+        st.markdown(highlighted_text, unsafe_allow_html=True)
+
+def text_to_speech(text):
+    tts = gTTS(text)
+    audio_file = "output.mp3"
+    tts.save(audio_file)
+    return audio_file
+
+def generate_word_cloud(text):
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    wordcloud_image_path = "wordcloud.png"
+    plt.savefig(wordcloud_image_path, format='png')
+    plt.close()
+    return wordcloud_image_path
+
+# Main app logic
 if uploaded_files:
     for uploaded_file in uploaded_files:
-        st.subheader(f"Processing {uploaded_file.name}")
-
-        # Read the contents of the uploaded file based on its type
+        cleaned_text = ""
         if uploaded_file.type == "application/pdf":
-            # Read PDF file
-            with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
-                text = ""
-                for page in doc:
-                    text += page.get_text()
-                st.text_area("Extracted Text from PDF", text, height=300)
-                display_complexity(text)
-                display_reading_time(text)
-                display_section_sentiment(text)
-                display_email_extraction(text)
-                display_ngram_analysis(text)
-                display_frequency_distribution(text)
-                display_style_analysis(text)
-                display_jargon_finder(text)
-                display_gendered_language(text)
-                display_palindromes(text)
-                display_text_with_mood_color(text)
-                display_keyword_extraction(text)
-                display_pdf_with_annotations(uploaded_file)
+            # Read PDF content
+            doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+            text = ""
+            for page in doc:
+                text += page.get_text()
+            cleaned_text = text.strip()
 
         elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            # Read DOCX file
             doc = Document(uploaded_file)
-            text = "\n".join([para.text for para in doc.paragraphs])
-            st.text_area("Extracted Text from DOCX", text, height=300)
-            display_complexity(text)
-            display_reading_time(text)
-            display_section_sentiment(text)
-            display_email_extraction(text)
-            display_ngram_analysis(text)
-            display_frequency_distribution(text)
-            display_style_analysis(text)
-            display_jargon_finder(text)
-            display_gendered_language(text)
-            display_palindromes(text)
-            display_text_with_mood_color(text)
-            display_keyword_extraction(text)
+            cleaned_text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
 
         elif uploaded_file.type == "text/plain":
-            # Read TXT file
-            text = uploaded_file.read().decode("utf-8")
-            st.text_area("Extracted Text from TXT", text, height=300)
-            display_complexity(text)
-            display_reading_time(text)
-            display_section_sentiment(text)
-            display_email_extraction(text)
-            display_ngram_analysis(text)
-            display_frequency_distribution(text)
-            display_style_analysis(text)
-            display_jargon_finder(text)
-            display_gendered_language(text)
-            display_palindromes(text)
-            display_text_with_mood_color(text)
-            display_keyword_extraction(text)
+            cleaned_text = uploaded_file.getvalue().decode("utf-8")
 
         elif uploaded_file.type == "text/html":
-            # Read HTML file
-            soup = BeautifulSoup(uploaded_file.read(), 'html.parser')
-            text = soup.get_text()
-            st.text_area("Extracted Text from HTML", text, height=300)
-            display_complexity(text)
-            display_reading_time(text)
-            display_section_sentiment(text)
-            display_email_extraction(text)
-            display_ngram_analysis(text)
-            display_frequency_distribution(text)
-            display_style_analysis(text)
-            display_jargon_finder(text)
-            display_gendered_language(text)
-            display_palindromes(text)
-            display_text_with_mood_color(text)
-            display_keyword_extraction(text)
+            soup = BeautifulSoup(uploaded_file, "html.parser")
+            cleaned_text = soup.get_text()
 
-st.write("Analysis completed. You can upload more files to analyze!")
+        # Display features
+        st.subheader("Cleaned Text")
+        st.write(cleaned_text)
+        display_palindromes(cleaned_text)
+        display_complexity(cleaned_text)
+        display_text_with_mood_color(cleaned_text)
+        display_reading_time(cleaned_text)
+        display_pos_tagging(cleaned_text)
+        display_gendered_language(cleaned_text)
+        display_section_sentiment(cleaned_text)
+        display_jargon_finder(cleaned_text)
+        display_style_analysis(cleaned_text)
+        display_keyword_extraction(cleaned_text)
+        display_ngram_analysis(cleaned_text)
+        display_frequency_distribution(cleaned_text)
+        display_tfidf_analysis(cleaned_text)
+        display_highlighted_text(cleaned_text)
+
+        # Text-to-Speech functionality
+        if st.button("Convert Text to Speech"):
+            audio_file = text_to_speech(cleaned_text)
+            with open(audio_file, "rb") as f:
+                st.audio(f.read(), format='audio/mp3')
+                st.download_button("Download Audio", f.read(), file_name="output.mp3")
+
+        if uploaded_file.type == "application/pdf":
+            keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):", key=f"keywords_{uploaded_file.name}")
+            if keywords:
+                display_pdf_with_annotations(uploaded_file, keywords.split(","))
+
+        if uploaded_file.type == "text/plain":
+            st.download_button("Download Cleaned Text", cleaned_text, "cleaned_text.txt")
+
+        if uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            st.download_button("Download Cleaned DOCX", cleaned_text, "cleaned_text.docx")
+
+        if uploaded_file.type == "text/html":
+            st.download_button("Download Cleaned HTML", cleaned_text, "cleaned_text.html")
+
+        if uploaded_file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            st.download_button("Download Generated Presentation", create_presentation_from_text(cleaned_text))
+
+        # Optionally generate a word cloud
+        if st.button("Generate Word Cloud"):
+            wordcloud_image = generate_word_cloud(cleaned_text)
+            st.image(wordcloud_image, caption="Word Cloud")
+
