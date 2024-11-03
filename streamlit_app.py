@@ -7,7 +7,7 @@ from collections import Counter
 
 def extract_text_from_pdf(pdf_file):
     text = ""
-    with fitz.open(pdf_file) as doc:
+    with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
         for page in doc:
             text += page.get_text()
     return text
