@@ -18,6 +18,7 @@ from spellchecker import SpellChecker
 st.title("Document Analysis App")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
+# Functions for analysis
 def find_palindromes(text):
     words = text.split()
     palindromes = [word for word in words if word == word[::-1] and len(word) > 2]
@@ -27,11 +28,6 @@ def display_palindromes(text):
     palindromes = find_palindromes(text)
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
-
-def sentence_count(text):
-    # Counts the number of sentences in the text based on the presence of periods, exclamation marks, or question marks
-    sentences = re.split(r'[.!?]+', text)
-    return len([s for s in sentences if s.strip()])  # Return count of non-empty sentences
 
 def calculate_complexity(text):
     avg_sentence_length = len(text.split()) / sentence_count(text)
@@ -72,8 +68,10 @@ def display_reading_time(text):
     st.write(f"Approximate Reading Time: {reading_time} minutes")
 
 def pos_tagging(text):
-    # Placeholder for POS tagging function, as SpaCy is removed
-    return Counter()
+    # Placeholder function, integrate your NLP model here if needed
+    doc = nlp(text)  # Assuming `nlp` is defined elsewhere in your app
+    pos_counts = Counter([token.pos_ for token in doc])
+    return pos_counts
 
 def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
@@ -115,8 +113,8 @@ def display_section_sentiment(text):
     sentiment_by_section(text)
 
 def find_jargon(text):
-    common_words = set()  # Use a basic set instead of SpaCy stop words
-    technical_words = set(word for word in text.split() if len(word) > 7 and word.lower() not in common_words)
+    common_words = set(textstat.lexicon_count(text, removepunct=True))
+    technical_words = set(word for word in text.split() if len(word) > 7 and word not in common_words)
     return technical_words
 
 def display_jargon_finder(text):
@@ -134,14 +132,19 @@ def detect_tone(text):
 
 def create_presentation_from_text(text):
     prs = Presentation()
-    slides = text.split('\n\n')
+    slides = text.split('\n\n')  # Splitting text into slides by paragraphs
     for slide_content in slides:
         slide = prs.slides.add_slide(prs.slide_layouts[1])
-        title, content = slide_content[:30], slide_content[30:]  
+        title, content = slide_content[:30], slide_content[30:]  # First 30 chars as title
         slide.shapes.title.text = title
         slide.placeholders[1].text = content
     prs.save("generated_presentation.pptx")
     return "generated_presentation.pptx"
+
+def display_presentation_generator(text):
+    st.subheader("Presentation Generator")
+    presentation_path = create_presentation_from_text(text)
+    st.download_button("Download Generated Presentation", presentation_path)
 
 def highlight_text_in_pdf(pdf_path, keywords):
     doc = fitz.open(pdf_path)
@@ -223,7 +226,7 @@ def simple_sentiment_analysis(text):
     
     return positive_count - negative_count
 
-# Word cloud generation
+# Keyword Cloud Generation
 def generate_word_cloud(text):
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     plt.figure(figsize=(10, 5))
@@ -231,13 +234,14 @@ def generate_word_cloud(text):
     plt.axis('off')
     st.pyplot()
 
-# Main logic
+# Main execution loop
 if uploaded_files:
     for uploaded_file in uploaded_files:
         text = extract_text(uploaded_file)
         cleaned_text = clean_text(text)
         
-        # Displaying various analyses
+        st.subheader(f"Analysis of {uploaded_file.name}")
+        
         display_palindromes(cleaned_text)
         display_complexity(cleaned_text)
         display_text_with_mood_color(cleaned_text)
@@ -247,23 +251,11 @@ if uploaded_files:
         display_section_sentiment(cleaned_text)
         display_jargon_finder(cleaned_text)
         display_style_analysis(cleaned_text)
+        display_presentation_generator(cleaned_text)
 
         if uploaded_file.type == "application/pdf":
-            keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):", key=f"keywords_{uploaded_file.name}")
-            if keywords:
-                display_pdf_with_annotations(uploaded_file.name, keywords.split(","))
-        
-        if uploaded_file.type == "text/plain":
-            st.download_button("Download Cleaned Text", cleaned_text, "cleaned_text.txt")
-            st.download_button("Download Summary", summarize_text(cleaned_text), "summary.txt")
-
-        if uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            st.download_button("Download Cleaned DOCX", cleaned_text, "cleaned_text.docx")
-
-        if uploaded_file.type == "text/html":
-            st.download_button("Download Cleaned HTML", cleaned_text, "cleaned_text.html")
-
-        if uploaded_file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-            st.download_button("Download Generated Presentation", create_presentation_from_text(cleaned_text))
-
-        generate_word_cloud(cleaned_text)
+            keywords = st.text_input("Enter keywords for PDF highlighting (comma-separated):")
+            if st.button("Highlight PDF"):
+                if keywords:
+                    keywords_list = [keyword.strip() for keyword in keywords.split(',')]
+                    display_pdf_with_annotations(uploaded_file, keywords_list)
