@@ -11,8 +11,14 @@ import re
 from wordcloud import WordCloud
 from collections import Counter
 
-# Set page configuration
-st.set_page_config(page_title="Ultimate Document Analysis Platform", layout="wide")
+# File uploader on the main page
+uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
+
+# Further processing can go here
+if uploaded_files:
+    for file in uploaded_files:
+        st.write(f"Uploaded file: {file.name}")
+        # Add your processing code for each file here
 
 # Sidebar for file upload
 st.sidebar.title("Upload Document")
