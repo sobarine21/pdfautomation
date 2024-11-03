@@ -12,7 +12,6 @@ from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
-import re  # Added for regex operations
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -28,13 +27,13 @@ def display_palindromes(text):
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
 
-def sentence_count(text):
+def count_sentences(text):
     # Simple sentence counting based on '.', '!', and '?'
     return text.count('.') + text.count('!') + text.count('?')
 
 def calculate_complexity(text):
-    sentences = sentence_count(text)
-    avg_sentence_length = len(text.split()) / sentences if sentences > 0 else 0
+    num_sentences = count_sentences(text)
+    avg_sentence_length = len(text.split()) / num_sentences if num_sentences > 0 else 0
     avg_word_length = sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0
     readability_score = flesch_reading_ease(text)
     return {
@@ -210,11 +209,11 @@ def clean_text(text):
 # Text Statistics
 def text_statistics(text):
     word_count = len(text.split())
-    sentence_count = sentence_count(text)
+    num_sentences = count_sentences(text)  # Avoiding name conflict
     character_count = len(text)
     return {
         "Word Count": word_count,
-        "Sentence Count": sentence_count,
+        "Sentence Count": num_sentences,
         "Character Count": character_count
     }
 
@@ -226,14 +225,13 @@ def summarize_text(text, num_sentences=3):
 # Simple sentiment analysis
 def simple_sentiment_analysis(text):
     words = text.split()
-    positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'correct', 'superior'])
-    negative_words = set(['bad', 'poor', 'terrible', 'negative', 'unfortunate', 'wrong', 'inferior'])
-    
+    positive_words = ['good', 'great', 'excellent', 'happy', 'positive']
+    negative_words = ['bad', 'sad', 'terrible', 'angry', 'negative']
     score = sum(1 for word in words if word in positive_words) - sum(1 for word in words if word in negative_words)
     return score
 
 # Extraction using TF-IDF
-@st.cache
+@st.cache_data
 def keyword_extraction_tfidf(text):
     tfidf_vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf_vectorizer.fit_transform([text])
