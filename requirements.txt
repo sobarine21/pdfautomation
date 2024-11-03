@@ -1,6 +1,10 @@
-streamlit
 PyMuPDF
-pandas
-numpy
+pytesseract
+Pillow
 scikit-learn
 textblob
+matplotlib
+seaborn
+python-docx
+beautifulsoup4
+streamlit
