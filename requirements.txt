@@ -2,3 +2,5 @@ streamlit
 PyMuPDF
 pandas
 numpy
+scikit-learn
+textblob
