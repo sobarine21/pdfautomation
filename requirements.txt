@@ -13,3 +13,4 @@ docx
 bs4
 wordcloud
 nltk
+spellchecker
