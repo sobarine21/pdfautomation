@@ -11,6 +11,7 @@ beautifulsoup4
 wordcloud
 python-docx
 bs4
+spacy
 wordcloud
 nltk
 pyspellchecker
