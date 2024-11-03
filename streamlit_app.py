@@ -11,7 +11,6 @@ import re
 from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
-from transformers import T5Tokenizer
 from pptx import Presentation
 
 # Title and file uploader on the main page
@@ -115,18 +114,6 @@ def display_jargon_finder(text):
     st.subheader("Technical Jargon")
     jargon = find_jargon(text)
     st.write(", ".join(jargon))
-from transformers import pipeline, BertTokenizer
-
-# Use BertTokenizer instead of T5Tokenizer
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-# Initialize the pipeline with a model that works with BertTokenizer
-paraphraser = pipeline("text-classification", model="your-chosen-model")
-
-# Example usage
-text = "Your input text here."
-result = paraphraser(text)
-print(result)
 
 def detect_tone(text):
     # Simple example, more advanced techniques would use NLP models
