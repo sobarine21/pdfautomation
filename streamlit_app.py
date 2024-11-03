@@ -77,6 +77,18 @@ def generate_word_cloud(text):
     plt.axis('off')
     st.pyplot(plt)
 
+# Email Extraction
+def extract_emails(text):
+    return re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+
+# Link Extraction
+def extract_links(text):
+    return re.findall(r'https?://\S+', text)
+
+# Number Extraction
+def extract_numbers(text):
+    return re.findall(r'\b\d+\b', text)
+
 # Main application logic
 if uploaded_files:
     all_texts = []
@@ -121,11 +133,11 @@ if uploaded_files:
 
     # Email and Link Extraction
     st.subheader("Extracted Emails")
-    st.write(extract_emails(cleaned_text))  # You may need to define this function
+    st.write(extract_emails(cleaned_text))
     st.subheader("Extracted Links")
-    st.write(extract_links(cleaned_text))  # You may need to define this function
+    st.write(extract_links(cleaned_text))
     st.subheader("Extracted Numbers")
-    st.write(extract_numbers(cleaned_text))  # You may need to define this function
+    st.write(extract_numbers(cleaned_text))
 
     # Visualizations
     st.subheader("Data Visualizations")
