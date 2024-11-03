@@ -29,7 +29,6 @@ def display_palindromes(text):
     st.write(", ".join(palindromes))
 
 def sentence_count(text):
-    # Counts the number of sentences in the text based on the presence of periods, exclamation marks, or question marks
     sentences = re.split(r'[.!?]+', text)
     return len([s for s in sentences if s.strip()])  # Return count of non-empty sentences
 
@@ -72,8 +71,7 @@ def display_reading_time(text):
     st.write(f"Approximate Reading Time: {reading_time} minutes")
 
 def pos_tagging(text):
-    # Placeholder for POS tagging function, as SpaCy is removed
-    return Counter()
+    return Counter()  # Placeholder for POS tagging function
 
 def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
@@ -104,18 +102,19 @@ def display_gendered_language(text):
 def sentiment_by_section(text):
     paragraphs = text.split("\n\n")
     section_sentiments = [simple_sentiment_analysis(paragraph) for paragraph in paragraphs]
-    plt.bar(range(len(section_sentiments)), section_sentiments, color='orange')
-    plt.title("Sentiment by Section")
-    plt.xlabel("Section")
-    plt.ylabel("Sentiment Score")
-    st.pyplot(plt)
+    fig, ax = plt.subplots()
+    ax.bar(range(len(section_sentiments)), section_sentiments, color='orange')
+    ax.set_title("Sentiment by Section")
+    ax.set_xlabel("Section")
+    ax.set_ylabel("Sentiment Score")
+    st.pyplot(fig)
 
 def display_section_sentiment(text):
     st.subheader("Sentiment by Section")
     sentiment_by_section(text)
 
 def find_jargon(text):
-    common_words = set()  # Use a basic set instead of SpaCy stop words
+    common_words = set()
     technical_words = set(word for word in text.split() if len(word) > 7 and word.lower() not in common_words)
     return technical_words
 
@@ -171,7 +170,6 @@ def display_style_analysis(text):
     st.subheader("Writing Style Analysis")
     st.write(f"Document Style: {style}")
 
-# Function to extract text from various formats
 def extract_text(file):
     if file.type == "application/pdf":
         return extract_text_from_pdf(file)
@@ -182,7 +180,6 @@ def extract_text(file):
     elif file.type == "text/html":
         return extract_text_from_html(file)
 
-# PDF extraction
 def extract_text_from_pdf(file):
     text = ""
     with fitz.open(stream=file.read(), filetype="pdf") as doc:
@@ -190,29 +187,24 @@ def extract_text_from_pdf(file):
             text += page.get_text()
     return text
 
-# DOCX extraction
 def extract_text_from_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs])
     return text
 
-# HTML extraction
 def extract_text_from_html(file):
     soup = BeautifulSoup(file.read(), 'html.parser')
     return soup.get_text()
 
-# Text Cleaning
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # Remove extra whitespace
     text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
     return text.strip()
 
-# Summarization
 def summarize_text(text, num_sentences=3):
     sentences = text.split('. ')
     return '. '.join(sentences[:num_sentences])
 
-# Simple sentiment analysis
 def simple_sentiment_analysis(text):
     words = text.split()
     positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'correct', 'superior'])
@@ -223,13 +215,12 @@ def simple_sentiment_analysis(text):
     
     return positive_count - negative_count
 
-# Word cloud generation
 def generate_word_cloud(text):
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot()
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.imshow(wordcloud, interpolation='bilinear')
+    ax.axis('off')
+    st.pyplot(fig)
 
 # Main logic
 if uploaded_files:
