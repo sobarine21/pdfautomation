@@ -115,18 +115,18 @@ def display_jargon_finder(text):
     st.subheader("Technical Jargon")
     jargon = find_jargon(text)
     st.write(", ".join(jargon))
-from transformers import pipeline, T5Tokenizer
+from transformers import pipeline, BertTokenizer
 
-# Replace with a compatible tokenizer
-tokenizer = T5Tokenizer.from_pretrained("t5-base")  # or any other supported model
+# Use BertTokenizer instead of T5Tokenizer
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-# Initialize the pipeline
-paraphraser = pipeline("text2text-generation", model="Vamsi/T5_Paraphrase")
+# Initialize the pipeline with a model that works with BertTokenizer
+paraphraser = pipeline("text-classification", model="your-chosen-model")
 
 # Example usage
 text = "Your input text here."
-paraphrased_text = paraphraser(text)
-print(paraphrased_text)
+result = paraphraser(text)
+print(result)
 
 def detect_tone(text):
     # Simple example, more advanced techniques would use NLP models
