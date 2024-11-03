@@ -241,6 +241,14 @@ def keyword_extraction_tfidf(text):
     denselist = dense.tolist()
     return pd.DataFrame(denselist, columns=feature_names).T.sort_values(0, ascending=False).head(10)
 
+# Function to generate word cloud
+def generate_word_cloud(text):
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    st.pyplot(plt)
+
 # Function to extract emails
 def extract_emails(text):
     email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
