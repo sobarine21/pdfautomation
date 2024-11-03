@@ -28,6 +28,11 @@ def display_palindromes(text):
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
 
+def sentence_count(text):
+    # Counts the number of sentences in the text based on the presence of periods, exclamation marks, or question marks
+    sentences = re.split(r'[.!?]+', text)
+    return len([s for s in sentences if s.strip()])  # Return count of non-empty sentences
+
 def calculate_complexity(text):
     avg_sentence_length = len(text.split()) / sentence_count(text)
     avg_word_length = sum(len(word) for word in text.split()) / len(text.split())
@@ -229,17 +234,13 @@ def generate_word_cloud(text):
 # Updated Email Extraction
 def extract_emails(text):
     emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
-    return list(set(emails))
+    return emails
 
-# Main Analysis Loop
 if uploaded_files:
     for uploaded_file in uploaded_files:
         text = extract_text(uploaded_file)
         cleaned_text = clean_text(text)
         
-        st.subheader("Extracted Text")
-        st.write(cleaned_text)
-
         # Displaying various analyses
         display_palindromes(cleaned_text)
         display_complexity(cleaned_text)
