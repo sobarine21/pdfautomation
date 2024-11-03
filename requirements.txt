@@ -16,3 +16,4 @@ nltk
 pyspellchecker
 textstat
 transformers
+pptx
