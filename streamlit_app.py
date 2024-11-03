@@ -86,10 +86,6 @@ def extract_emails(text):
 def extract_links(text):
     return re.findall(r'https?://\S+', text)
 
-# Number Extraction
-def extract_numbers(text):
-    return re.findall(r'\b\d+\b', text)
-
 # Frequency Distribution of Words
 def word_frequency(text):
     words = text.split()
@@ -277,61 +273,48 @@ if uploaded_files:
     st.write(f"Total Links: {count_links(cleaned_text)}")
 
     st.subheader("Extracted Numbers")
-    st.write(extract_numbers(cleaned_text))
-
-    # Word Frequency Distribution
-    st.subheader("Word Frequency Distribution")
-    word_counts = word_frequency(cleaned_text)
-    plot_word_frequency(word_counts)
-
-    # Additional Features
-    st.subheader("Additional Features")
-    st.write(f"Total Paragraphs: {count_paragraphs(cleaned_text)}")
-    st.write(f"Unique Words: {len(find_unique_words(cleaned_text))}")
-    st.write("Top 5 Common Phrases: ")
-    st.write(common_phrases(cleaned_text))
-    st.write("Extracted Dates: ")
     st.write(extract_dates(cleaned_text))
-    st.write("Extracted Time: ")
-    st.write(extract_time(cleaned_text))
-    st.write("Extracted Hashtags: ")
-    st.write(extract_hashtags(cleaned_text))
-    st.write("Extracted Mentions: ")
-    st.write(extract_mentions(cleaned_text))
-    st.write("Top 3 Longest Sentences: ")
-    st.write(top_n_sentences(cleaned_text, 3))
-    st.write("Common Quotes: ")
-    st.write(extract_quotes(cleaned_text))
-    st.write("Spelling Errors: ")
-    st.write(check_spelling(cleaned_text))
 
-    # Visualizations
-    st.subheader("Data Visualizations")
-    plt.figure(figsize=(6, 4))
-    sns.histplot([sentiment_score], bins=10, kde=True)
-    plt.title("Sentiment Distribution")
-    st.pyplot(plt)
+    # Frequency Distribution
+    st.subheader("Top 10 Most Frequent Words")
+    freq_words = word_frequency(cleaned_text)
+    plot_word_frequency(freq_words)
 
-    # Export Options
-    st.subheader("Export Options")
-    export_format = st.selectbox("Choose export format", ["CSV", "JSON", "Excel"])
-    if st.button("Export Data"):
-        if export_format == "CSV":
-            output = df_tfidf.to_csv(index=False)
-            st.download_button(label="Download CSV", data=output, file_name='keywords.csv', mime='text/csv')
-        elif export_format == "JSON":
-            output = df_tfidf.to_json()
-            st.download_button(label="Download JSON", data=output, file_name='keywords.json', mime='application/json')
-        elif export_format == "Excel":
-            output = df_tfidf.to_excel(index=False)
-            st.download_button(label="Download Excel", data=output, file_name='keywords.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    # Unique Words
+    st.subheader("Unique Words")
+    st.write(find_unique_words(cleaned_text))
 
-    # User Feedback Form
-    st.sidebar.markdown("### Feedback")
-    feedback = st.sidebar.text_area("Your Feedback:")
-    if st.sidebar.button("Submit Feedback"):
-        st.sidebar.success("Thank you for your feedback!")
+    # Quotes
+    st.subheader("Extracted Quotes")
+    quotes = extract_quotes(cleaned_text)
+    st.write(quotes)
 
-# Help and Support Section
-st.sidebar.markdown("### Help")
-st.sidebar.write("For support, please contact us.")
+    # Check for spelling errors
+    st.subheader("Spelling Errors")
+    spelling_errors = check_spelling(cleaned_text)
+    st.write(spelling_errors)
+
+    # Paragraph Count
+    st.subheader("Paragraph Count")
+    st.write(count_paragraphs(cleaned_text))
+
+    # Citations
+    st.subheader("Extracted Citations")
+    citations = extract_citations(cleaned_text)
+    st.write(citations)
+
+    # References
+    st.subheader("Extracted References")
+    references = extract_references(cleaned_text)
+    st.write(references)
+
+    # Special Character Removal
+    st.subheader("Text without Special Characters")
+    st.write(remove_special_characters(cleaned_text))
+
+    # Save processed text if needed
+    st.sidebar.subheader("Download Processed Text")
+    if st.sidebar.button("Download"):
+        st.sidebar.download_button("Download Cleaned Text", cleaned_text)
+
+st.sidebar.text("Document Analysis App")
