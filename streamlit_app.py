@@ -17,7 +17,7 @@ from sklearn.metrics import jaccard_score
 from nltk import ngrams
 
 # Title and file uploader on the main page
-st.title("Enhanced Document Analysis App")
+st.title("Sobarine Content anlaysis SaaS")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
 def simple_sentiment_analysis(text):
