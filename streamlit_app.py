@@ -15,6 +15,166 @@ from collections import Counter
 st.title("Document Analysis App")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
+def find_palindromes(text):
+    words = text.split()
+    palindromes = [word for word in words if word == word[::-1] and len(word) > 2]
+    return palindromes
+
+def display_palindromes(text):
+    palindromes = find_palindromes(text)
+    st.subheader("Palindromic Words")
+    st.write(", ".join(palindromes))
+from textstat import flesch_reading_ease
+
+def calculate_complexity(text):
+    avg_sentence_length = len(text.split()) / sentence_count(text)
+    avg_word_length = sum(len(word) for word in text.split()) / len(text.split())
+    readability_score = flesch_reading_ease(text)
+    return {
+        "Average Sentence Length": avg_sentence_length,
+        "Average Word Length": avg_word_length,
+        "Readability Score": readability_score
+    }
+
+def display_complexity(text):
+    complexity = calculate_complexity(text)
+    st.subheader("Text Complexity")
+    st.json(complexity)
+def mood_color(score):
+    if score > 5:
+        return "#A9DFBF"  # light green for positive mood
+    elif score < -5:
+        return "#F5B7B1"  # light red for negative mood
+    else:
+        return "#F9E79F"  # light yellow for neutral mood
+
+def display_text_with_mood_color(text):
+    sentiment_score = simple_sentiment_analysis(text)
+    color = mood_color(sentiment_score)
+    st.markdown(f"<div style='background-color: {color}; padding: 10px;'>{text}</div>", unsafe_allow_html=True)
+
+def estimate_reading_time(text, wpm=200):
+    word_count = len(text.split())
+    minutes = word_count / wpm
+    return round(minutes, 2)
+
+def display_reading_time(text):
+    reading_time = estimate_reading_time(text)
+    st.subheader("Estimated Reading Time")
+    st.write(f"Approximate Reading Time: {reading_time} minutes")
+def pos_tagging(text):
+    doc = nlp(text)
+    pos_counts = Counter([token.pos_ for token in doc])
+    return pos_counts
+
+def display_pos_tagging(text):
+    st.subheader("Part-of-Speech Analysis")
+    pos_counts = pos_tagging(text)
+    st.bar_chart(pd.DataFrame(pos_counts.values(), index=pos_counts.keys(), columns=["Count"]))
+def gendered_language_analysis(text):
+    male_words = ["he", "him", "his", "man", "men"]
+    female_words = ["she", "her", "hers", "woman", "women"]
+    
+    male_count = sum(text.lower().count(word) for word in male_words)
+    female_count = sum(text.lower().count(word) for word in female_words)
+    
+    if male_count > female_count:
+        result = "More Male-Language Oriented"
+    elif female_count > male_count:
+        result = "More Female-Language Oriented"
+    else:
+        result = "Neutral Language"
+    
+    return result
+
+def display_gendered_language(text):
+    st.subheader("Gendered Language Analysis")
+    result = gendered_language_analysis(text)
+    st.write(result)
+def sentiment_by_section(text):
+    paragraphs = text.split("\n\n")
+    section_sentiments = [simple_sentiment_analysis(paragraph) for paragraph in paragraphs]
+    plt.bar(range(len(section_sentiments)), section_sentiments, color='orange')
+    plt.title("Sentiment by Section")
+    plt.xlabel("Section")
+    plt.ylabel("Sentiment Score")
+    st.pyplot(plt)
+
+def display_section_sentiment(text):
+    st.subheader("Sentiment by Section")
+    sentiment_by_section(text)
+def find_jargon(text):
+    common_words = set(textstat.lexicon_count(text, removepunct=True))
+    technical_words = set(word for word in text.split() if len(word) > 7 and word not in common_words)
+    return technical_words
+
+def display_jargon_finder(text):
+    st.subheader("Technical Jargon")
+    jargon = find_jargon(text)
+    st.write(", ".join(jargon))
+from transformers import pipeline
+paraphraser = pipeline("paraphrase-multilingual-MiniLM-L12")
+
+def paraphrase_text(text):
+    paraphrased = paraphraser(text, num_return_sequences=1)[0]["generated_text"]
+    return paraphrased
+def detect_tone(text):
+    # Simple example, more advanced techniques would use NLP models
+    if "!" in text:
+        return "Casual/Excited"
+    elif text.isupper():
+        return "Aggressive"
+    else:
+        return "Neutral/Formal"
+from pptx import Presentation
+
+def create_presentation_from_text(text):
+    prs = Presentation()
+    slides = text.split('\n\n')  # Splitting text into slides by paragraphs
+    for slide_content in slides:
+        slide = prs.slides.add_slide(prs.slide_layouts[1])
+        title, content = slide_content[:30], slide_content[30:]  # First 30 chars as title
+        slide.shapes.title.text = title
+        slide.placeholders[1].text = content
+    prs.save("generated_presentation.pptx")
+    return "generated_presentation.pptx"
+
+def display_presentation_generator(text):
+    st.subheader("Presentation Generator")
+    presentation_path = create_presentation_from_text(text)
+    st.download_button("Download Generated Presentation", presentation_path)
+import fitz  # PyMuPDF for PDF manipulation
+
+def highlight_text_in_pdf(pdf_path, keywords):
+    doc = fitz.open(pdf_path)
+    for page in doc:
+        for keyword in keywords:
+            text_instances = page.search_for(keyword)
+            for inst in text_instances:
+                page.add_highlight_annot(inst)
+    annotated_pdf_path = "annotated_" + pdf_path
+    doc.save(annotated_pdf_path)
+    return annotated_pdf_path
+
+def display_pdf_with_annotations(pdf_path, keywords):
+    st.subheader("Annotated PDF")
+    annotated_pdf = highlight_text_in_pdf(pdf_path, keywords)
+    st.download_button("Download Annotated PDF", annotated_pdf)
+
+
+def analyze_style(text):
+    formal_words = set(['therefore', 'consequently', 'moreover', 'hence', 'furthermore'])
+    informal_words = set(['awesome', 'cool', 'totally', 'like', 'just', 'really'])
+    formal_count = sum(1 for word in text.split() if word.lower() in formal_words)
+    informal_count = sum(1 for word in text.split() if word.lower() in informal_words)
+    return "Formal" if formal_count > informal_count else "Informal"
+
+def display_style_analysis(text):
+    style = analyze_style(text)
+    st.subheader("Writing Style Analysis")
+    st.write(f"Document Style: {style}")
+
+
 # Function to extract text from various formats
 def extract_text(file):
     if file.type == "application/pdf":
