@@ -1,26 +1,14 @@
 import streamlit as st
 import pandas as pd
 import fitz  # PyMuPDF for PDF processing
-import pytesseract  # OCR
-from PIL import Image
 from sklearn.feature_extraction.text import TfidfVectorizer
-from textblob import TextBlob, Word, NotComplete
 import matplotlib.pyplot as plt
 import seaborn as sns
 from docx import Document
 from bs4 import BeautifulSoup
 import numpy as np
 import re
-import os
 from wordcloud import WordCloud
-
-# Function to download TextBlob corpora if missing
-def ensure_textblob_corpora():
-    try:
-        # This will raise an error if corpora are missing
-        TextBlob("test").tags
-    except Exception as e:
-        st.error("TextBlob corpora are missing. Please run the following command in your terminal: `python -m textblob.download_corpora`.")
 
 # Set page configuration
 st.set_page_config(page_title="Ultimate Document Analysis Platform", layout="wide")
@@ -70,10 +58,16 @@ def summarize_text(text, num_sentences=3):
     sentences = text.split('. ')
     return '. '.join(sentences[:num_sentences])
 
-# Entity Recognition (simple version)
-def extract_entities(text):
-    blob = TextBlob(text)
-    return [(word, tag) for word, tag in blob.tags if tag in ['NNP', 'NNPS']]  # Proper nouns
+# Simple sentiment analysis
+def simple_sentiment_analysis(text):
+    words = text.split()
+    positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'correct', 'superior'])
+    negative_words = set(['bad', 'poor', 'terrible', 'negative', 'unfortunate', 'wrong', 'inferior'])
+    
+    positive_count = sum(1 for word in words if word in positive_words)
+    negative_count = sum(1 for word in words if word in negative_words)
+    
+    return positive_count - negative_count
 
 # Keyword Cloud Generation
 def generate_word_cloud(text):
@@ -85,8 +79,6 @@ def generate_word_cloud(text):
 
 # Main application logic
 if uploaded_files:
-    ensure_textblob_corpora()  # Check for TextBlob corpora
-
     all_texts = []
     for uploaded_file in uploaded_files:
         text = extract_text(uploaded_file)
@@ -103,10 +95,10 @@ if uploaded_files:
     st.subheader("Cleaned Text")
     st.write(cleaned_text)
 
-    # Sentiment Analysis
+    # Simple Sentiment Analysis
+    sentiment_score = simple_sentiment_analysis(cleaned_text)
     st.subheader("Sentiment Analysis")
-    polarity = TextBlob(cleaned_text).sentiment.polarity
-    st.write(f"Sentiment Polarity: {polarity:.2f}")
+    st.write(f"Sentiment Score: {sentiment_score}")
 
     # Summary of Text
     st.subheader("Text Summary")
@@ -123,27 +115,22 @@ if uploaded_files:
     df_tfidf = pd.DataFrame(denselist, columns=feature_names)
     st.write(df_tfidf.T.sort_values(0, ascending=False).head(10))
 
-    # Entity Recognition
-    st.subheader("Extracted Entities")
-    entities = extract_entities(cleaned_text)
-    st.write(entities)
-
     # Generate Word Cloud
     st.subheader("Keyword Cloud")
     generate_word_cloud(cleaned_text)
 
     # Email and Link Extraction
     st.subheader("Extracted Emails")
-    st.write(extract_emails(cleaned_text))
+    st.write(extract_emails(cleaned_text))  # You may need to define this function
     st.subheader("Extracted Links")
-    st.write(extract_links(cleaned_text))
+    st.write(extract_links(cleaned_text))  # You may need to define this function
     st.subheader("Extracted Numbers")
-    st.write(extract_numbers(cleaned_text))
+    st.write(extract_numbers(cleaned_text))  # You may need to define this function
 
     # Visualizations
     st.subheader("Data Visualizations")
     plt.figure(figsize=(6, 4))
-    sns.histplot([polarity], bins=10, kde=True)
+    sns.histplot([sentiment_score], bins=10, kde=True)
     plt.title("Sentiment Distribution")
     st.pyplot(plt)
 
