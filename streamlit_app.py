@@ -11,18 +11,9 @@ import re
 from wordcloud import WordCloud
 from collections import Counter
 
-# File uploader on the main page
+# Title and file uploader on the main page
+st.title("Document Analysis App")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
-
-# Further processing can go here
-if uploaded_files:
-    for file in uploaded_files:
-        st.write(f"Uploaded file: {file.name}")
-        # Add your processing code for each file here
-
-# Sidebar for file upload
-st.sidebar.title("Upload Document")
-uploaded_files = st.sidebar.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
 # Function to extract text from various formats
 def extract_text(file):
@@ -278,8 +269,9 @@ if uploaded_files:
     st.write(links)
     st.write(f"Total Links: {count_links(cleaned_text)}")
 
-    st.subheader("Extracted Numbers")
-    st.write(extract_dates(cleaned_text))
+    st.subheader("Extracted Dates")
+    dates = extract_dates(cleaned_text)
+    st.write(dates)
 
     # Frequency Distribution
     st.subheader("Top 10 Most Frequent Words")
@@ -318,9 +310,10 @@ if uploaded_files:
     st.subheader("Text without Special Characters")
     st.write(remove_special_characters(cleaned_text))
 
-    # Save processed text if needed
+    # Download processed text if needed
     st.sidebar.subheader("Download Processed Text")
     if st.sidebar.button("Download"):
         st.sidebar.download_button("Download Cleaned Text", cleaned_text)
 
+# Sidebar Title
 st.sidebar.text("Document Analysis App")
