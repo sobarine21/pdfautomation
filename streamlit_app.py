@@ -13,6 +13,10 @@ from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
 from spellchecker import SpellChecker
+import spacy  # Assuming you are using SpaCy for NLP
+
+# Load SpaCy model
+nlp = spacy.load("en_core_web_sm")  # Ensure that this model is installed
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -68,7 +72,6 @@ def display_reading_time(text):
     st.write(f"Approximate Reading Time: {reading_time} minutes")
 
 def pos_tagging(text):
-    # Placeholder function, integrate your NLP model here if needed
     doc = nlp(text)  # Assuming `nlp` is defined elsewhere in your app
     pos_counts = Counter([token.pos_ for token in doc])
     return pos_counts
@@ -232,7 +235,7 @@ def generate_word_cloud(text):
     plt.figure(figsize=(10, 5))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
-    st.pyplot()
+    return plt
 
 # Main execution loop
 if uploaded_files:
