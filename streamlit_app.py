@@ -22,16 +22,19 @@ nlp = spacy.load("en_core_web_sm")
 st.title("Document Analysis App")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
+# Function to find palindromes in the text
 def find_palindromes(text):
     words = text.split()
     palindromes = [word for word in words if word == word[::-1] and len(word) > 2]
     return palindromes
 
+# Display palindromic words
 def display_palindromes(text):
     palindromes = find_palindromes(text)
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
 
+# Calculate text complexity metrics
 def calculate_complexity(text):
     avg_sentence_length = len(text.split()) / sentence_count(text)
     avg_word_length = sum(len(word) for word in text.split()) / len(text.split())
@@ -42,11 +45,13 @@ def calculate_complexity(text):
         "Readability Score": readability_score
     }
 
+# Display text complexity metrics
 def display_complexity(text):
     complexity = calculate_complexity(text)
     st.subheader("Text Complexity")
     st.json(complexity)
 
+# Determine mood color based on sentiment score
 def mood_color(score):
     if score > 5:
         return "#A9DFBF"  # light green for positive mood
@@ -55,31 +60,37 @@ def mood_color(score):
     else:
         return "#F9E79F"  # light yellow for neutral mood
 
+# Display text with background color based on sentiment
 def display_text_with_mood_color(text):
     sentiment_score = simple_sentiment_analysis(text)
     color = mood_color(sentiment_score)
     st.markdown(f"<div style='background-color: {color}; padding: 10px;'>{text}</div>", unsafe_allow_html=True)
 
+# Estimate reading time for the text
 def estimate_reading_time(text, wpm=200):
     word_count = len(text.split())
     minutes = word_count / wpm
     return round(minutes, 2)
 
+# Display estimated reading time
 def display_reading_time(text):
     reading_time = estimate_reading_time(text)
     st.subheader("Estimated Reading Time")
     st.write(f"Approximate Reading Time: {reading_time} minutes")
 
+# Perform Part-of-Speech tagging
 def pos_tagging(text):
     doc = nlp(text)
     pos_counts = Counter([token.pos_ for token in doc])
     return pos_counts
 
+# Display Part-of-Speech analysis
 def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
     pos_counts = pos_tagging(text)
     st.bar_chart(pd.DataFrame(pos_counts.values(), index=pos_counts.keys(), columns=["Count"]))
 
+# Analyze gendered language in the text
 def gendered_language_analysis(text):
     male_words = ["he", "him", "his", "man", "men"]
     female_words = ["she", "her", "hers", "woman", "women"]
@@ -96,11 +107,13 @@ def gendered_language_analysis(text):
     
     return result
 
+# Display gendered language analysis result
 def display_gendered_language(text):
     st.subheader("Gendered Language Analysis")
     result = gendered_language_analysis(text)
     st.write(result)
 
+# Analyze sentiment by section
 def sentiment_by_section(text):
     paragraphs = text.split("\n\n")
     section_sentiments = [simple_sentiment_analysis(paragraph) for paragraph in paragraphs]
@@ -110,20 +123,24 @@ def sentiment_by_section(text):
     plt.ylabel("Sentiment Score")
     st.pyplot(plt)
 
+# Display section sentiment
 def display_section_sentiment(text):
     st.subheader("Sentiment by Section")
     sentiment_by_section(text)
 
+# Identify technical jargon in the text
 def find_jargon(text):
     common_words = set(nlp.Defaults.stop_words)
     technical_words = set(word for word in text.split() if len(word) > 7 and word.lower() not in common_words)
     return technical_words
 
+# Display identified jargon
 def display_jargon_finder(text):
     st.subheader("Technical Jargon")
     jargon = find_jargon(text)
     st.write(", ".join(jargon))
 
+# Detect tone of the text
 def detect_tone(text):
     if "!" in text:
         return "Casual/Excited"
@@ -132,6 +149,7 @@ def detect_tone(text):
     else:
         return "Neutral/Formal"
 
+# Create a PowerPoint presentation from the text
 def create_presentation_from_text(text):
     prs = Presentation()
     slides = text.split('\n\n')
@@ -143,6 +161,7 @@ def create_presentation_from_text(text):
     prs.save("generated_presentation.pptx")
     return "generated_presentation.pptx"
 
+# Highlight keywords in a PDF
 def highlight_text_in_pdf(pdf_path, keywords):
     doc = fitz.open(pdf_path)
     for page in doc:
@@ -154,11 +173,13 @@ def highlight_text_in_pdf(pdf_path, keywords):
     doc.save(annotated_pdf_path)
     return annotated_pdf_path
 
+# Display annotated PDF with highlights
 def display_pdf_with_annotations(pdf_path, keywords):
     st.subheader("Annotated PDF")
     annotated_pdf = highlight_text_in_pdf(pdf_path, keywords)
     st.download_button("Download Annotated PDF", annotated_pdf)
 
+# Analyze the writing style
 def analyze_style(text):
     formal_words = set(['therefore', 'consequently', 'moreover', 'hence', 'furthermore'])
     informal_words = set(['awesome', 'cool', 'totally', 'like', 'just', 'really'])
@@ -166,6 +187,7 @@ def analyze_style(text):
     informal_count = sum(1 for word in text.split() if word.lower() in informal_words)
     return "Formal" if formal_count > informal_count else "Informal"
 
+# Display writing style analysis
 def display_style_analysis(text):
     style = analyze_style(text)
     st.subheader("Writing Style Analysis")
@@ -182,7 +204,7 @@ def extract_text(file):
     elif file.type == "text/html":
         return extract_text_from_html(file)
 
-# PDF extraction
+# Extract text from PDF
 def extract_text_from_pdf(file):
     text = ""
     with fitz.open(stream=file.read(), filetype="pdf") as doc:
@@ -190,13 +212,13 @@ def extract_text_from_pdf(file):
             text += page.get_text()
     return text
 
-# DOCX extraction
+# Extract text from DOCX
 def extract_text_from_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs])
     return text
 
-# HTML extraction
+# Extract text from HTML
 def extract_text_from_html(file):
     soup = BeautifulSoup(file.read(), 'html.parser')
     return soup.get_text()
@@ -207,7 +229,7 @@ def clean_text(text):
     text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
     return text.strip()
 
-# Summarization
+# Summarization of text
 def summarize_text(text, num_sentences=3):
     sentences = text.split('. ')
     return '. '.join(sentences[:num_sentences])
@@ -231,7 +253,7 @@ def generate_word_cloud(text):
     plt.axis('off')
     st.pyplot(plt)
 
-# Updated Email Extraction
+# Email Extraction
 def extract_emails(text):
     emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
     return list(set(emails))
