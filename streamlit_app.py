@@ -75,9 +75,10 @@ def generate_word_cloud(text):
     plt.axis('off')
     st.pyplot(plt)
 
-# Email Extraction
+# Updated Email Extraction
 def extract_emails(text):
-    return re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+    email_pattern = r'[\w\.-]+@[\w\.-]+\.\w+'
+    return re.findall(email_pattern, text)
 
 # Link Extraction
 def extract_links(text):
