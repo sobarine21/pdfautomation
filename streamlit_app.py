@@ -14,7 +14,7 @@ from gtts import gTTS
 import os
 
 # Title and file uploader on the main page
-st.title("Document Analysis App")
+st.title(Sobarine Data automations")
 uploaded_files = st.file_uploader("Choose files", type=["pdf", "docx", "txt", "html"], accept_multiple_files=True)
 
 def find_palindromes(text):
