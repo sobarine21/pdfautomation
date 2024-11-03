@@ -139,11 +139,6 @@ def create_presentation_from_text(text):
     prs.save("generated_presentation.pptx")
     return "generated_presentation.pptx"
 
-def display_presentation_generator(text):
-    st.subheader("Presentation Generator")
-    presentation_path = create_presentation_from_text(text)
-    st.download_button("Download Generated Presentation", presentation_path)
-
 def highlight_text_in_pdf(pdf_path, keywords):
     doc = fitz.open(pdf_path)
     for page in doc:
@@ -207,6 +202,17 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # Remove extra whitespace
     text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
     return text.strip()
+
+# Text Statistics
+def text_statistics(text):
+    word_count = len(text.split())
+    sentence_count = text.count('.') + text.count('!') + text.count('?')
+    character_count = len(text)
+    return {
+        "Word Count": word_count,
+        "Sentence Count": sentence_count,
+        "Character Count": character_count
+    }
 
 # Summarization
 def summarize_text(text, num_sentences=3):
