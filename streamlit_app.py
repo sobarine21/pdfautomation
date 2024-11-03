@@ -48,8 +48,8 @@ def sentence_count(text):
     return len([s for s in sentences if s.strip()])  # Return count of non-empty sentences
 
 def calculate_complexity(text):
-    avg_sentence_length = len(text.split()) / sentence_count(text)
-    avg_word_length = sum(len(word) for word in text.split()) / len(text.split())
+    avg_sentence_length = len(text.split()) / sentence_count(text) if sentence_count(text) > 0 else 0
+    avg_word_length = sum(len(word) for word in text.split()) / len(text.split()) if len(text.split()) > 0 else 0
     readability_score = flesch_reading_ease(text)
     return {
         "Average Sentence Length": avg_sentence_length,
@@ -93,7 +93,10 @@ def pos_tagging(text):
 def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
     pos_counts = pos_tagging(text)
-    st.bar_chart(pd.DataFrame(pos_counts.values(), index=pos_counts.keys(), columns=["Count"]))
+    if pos_counts:
+        st.bar_chart(pd.DataFrame(pos_counts.values(), index=pos_counts.keys(), columns=["Count"]))
+    else:
+        st.write("No part-of-speech data available.")
 
 def gendered_language_analysis(text):
     male_words = ["he", "him", "his", "man", "men"]
@@ -235,7 +238,7 @@ def display_tfidf_analysis(text):
 
 def text_highlighting(text, terms):
     for term in terms:
-        text = text.replace(term.strip(), f"**{term.strip()}**")  # Ensure stripping whitespace
+        text = text.replace(term.strip(), f"**{term.strip()}")  # Ensure stripping whitespace
     return text
 
 def display_highlighted_text(text):
@@ -249,6 +252,16 @@ def text_to_speech(text):
     audio_file = "output.mp3"
     tts.save(audio_file)
     return audio_file
+
+def generate_word_cloud(text):
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    wordcloud_image_path = "wordcloud.png"
+    plt.savefig(wordcloud_image_path, format='png')
+    plt.close()
+    return wordcloud_image_path
 
 # Main app logic
 if uploaded_files:
@@ -305,7 +318,6 @@ if uploaded_files:
 
         if uploaded_file.type == "text/plain":
             st.download_button("Download Cleaned Text", cleaned_text, "cleaned_text.txt")
-            st.download_button("Download Summary", summarize_text(cleaned_text), "summary.txt")
 
         if uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             st.download_button("Download Cleaned DOCX", cleaned_text, "cleaned_text.docx")
@@ -317,4 +329,7 @@ if uploaded_files:
             st.download_button("Download Generated Presentation", create_presentation_from_text(cleaned_text))
 
         # Optionally generate a word cloud
-        generate_word_cloud(cleaned_text)
+        if st.button("Generate Word Cloud"):
+            wordcloud_image = generate_word_cloud(cleaned_text)
+            st.image(wordcloud_image, caption="Word Cloud")
+
