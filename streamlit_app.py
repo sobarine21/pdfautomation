@@ -12,6 +12,11 @@ from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
+from spellchecker import SpellChecker
+import spacy
+
+# Load the English NLP model
+nlp = spacy.load("en_core_web_sm")
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -26,7 +31,6 @@ def display_palindromes(text):
     palindromes = find_palindromes(text)
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
-from textstat import flesch_reading_ease
 
 def calculate_complexity(text):
     avg_sentence_length = len(text.split()) / sentence_count(text)
@@ -42,6 +46,7 @@ def display_complexity(text):
     complexity = calculate_complexity(text)
     st.subheader("Text Complexity")
     st.json(complexity)
+
 def mood_color(score):
     if score > 5:
         return "#A9DFBF"  # light green for positive mood
@@ -64,6 +69,7 @@ def display_reading_time(text):
     reading_time = estimate_reading_time(text)
     st.subheader("Estimated Reading Time")
     st.write(f"Approximate Reading Time: {reading_time} minutes")
+
 def pos_tagging(text):
     doc = nlp(text)
     pos_counts = Counter([token.pos_ for token in doc])
@@ -73,6 +79,7 @@ def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
     pos_counts = pos_tagging(text)
     st.bar_chart(pd.DataFrame(pos_counts.values(), index=pos_counts.keys(), columns=["Count"]))
+
 def gendered_language_analysis(text):
     male_words = ["he", "him", "his", "man", "men"]
     female_words = ["she", "her", "hers", "woman", "women"]
@@ -93,6 +100,7 @@ def display_gendered_language(text):
     st.subheader("Gendered Language Analysis")
     result = gendered_language_analysis(text)
     st.write(result)
+
 def sentiment_by_section(text):
     paragraphs = text.split("\n\n")
     section_sentiments = [simple_sentiment_analysis(paragraph) for paragraph in paragraphs]
@@ -105,6 +113,7 @@ def sentiment_by_section(text):
 def display_section_sentiment(text):
     st.subheader("Sentiment by Section")
     sentiment_by_section(text)
+
 def find_jargon(text):
     common_words = set(textstat.lexicon_count(text, removepunct=True))
     technical_words = set(word for word in text.split() if len(word) > 7 and word not in common_words)
@@ -116,14 +125,12 @@ def display_jargon_finder(text):
     st.write(", ".join(jargon))
 
 def detect_tone(text):
-    # Simple example, more advanced techniques would use NLP models
     if "!" in text:
         return "Casual/Excited"
     elif text.isupper():
         return "Aggressive"
     else:
         return "Neutral/Formal"
-from pptx import Presentation
 
 def create_presentation_from_text(text):
     prs = Presentation()
@@ -140,7 +147,6 @@ def display_presentation_generator(text):
     st.subheader("Presentation Generator")
     presentation_path = create_presentation_from_text(text)
     st.download_button("Download Generated Presentation", presentation_path)
-import fitz  # PyMuPDF for PDF manipulation
 
 def highlight_text_in_pdf(pdf_path, keywords):
     doc = fitz.open(pdf_path)
@@ -149,7 +155,7 @@ def highlight_text_in_pdf(pdf_path, keywords):
             text_instances = page.search_for(keyword)
             for inst in text_instances:
                 page.add_highlight_annot(inst)
-    annotated_pdf_path = "annotated_" + pdf_path
+    annotated_pdf_path = "annotated_" + pdf_path.name
     doc.save(annotated_pdf_path)
     return annotated_pdf_path
 
@@ -157,7 +163,6 @@ def display_pdf_with_annotations(pdf_path, keywords):
     st.subheader("Annotated PDF")
     annotated_pdf = highlight_text_in_pdf(pdf_path, keywords)
     st.download_button("Download Annotated PDF", annotated_pdf)
-
 
 def analyze_style(text):
     formal_words = set(['therefore', 'consequently', 'moreover', 'hence', 'furthermore'])
@@ -170,7 +175,6 @@ def display_style_analysis(text):
     style = analyze_style(text)
     st.subheader("Writing Style Analysis")
     st.write(f"Document Style: {style}")
-
 
 # Function to extract text from various formats
 def extract_text(file):
@@ -237,152 +241,69 @@ def extract_emails(text):
     email_pattern = r'[\w\.-]+@[\w\.-]+\.\w+'
     return re.findall(email_pattern, text)
 
-# Link Extraction
+# Updated Link Extraction
 def extract_links(text):
-    return re.findall(r'https?://\S+', text)
+    link_pattern = r'https?://[^\s]+'
+    return re.findall(link_pattern, text)
 
-# Frequency Distribution of Words
+# Updated Date Extraction
+def extract_dates(text):
+    date_pattern = r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b|\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b'
+    return re.findall(date_pattern, text)
+
+# Word Frequency
 def word_frequency(text):
     words = text.split()
-    word_counts = Counter(words)
-    return word_counts.most_common(10)
+    word_count = Counter(words)
+    return word_count.most_common(10)
 
-# Stop Words Removal
-def remove_stopwords(text):
-    stop_words = set([
-        'the', 'is', 'in', 'and', 'to', 'with', 'that', 'of', 'a', 'for', 'on', 
-        'it', 'as', 'was', 'at', 'by', 'an', 'be', 'this', 'which', 'or', 'are'
-    ])
-    words = text.split()
-    filtered_words = [word for word in words if word.lower() not in stop_words]
-    return ' '.join(filtered_words)
-
-# Visualizing Word Frequency
-def plot_word_frequency(word_counts):
-    words, counts = zip(*word_counts)
-    plt.figure(figsize=(10, 5))
-    sns.barplot(x=list(words), y=list(counts))
-    plt.xticks(rotation=45)
-    plt.title('Top 10 Most Frequent Words')
-    plt.ylabel('Frequency')
-    st.pyplot(plt)
-
-# Additional Features
-def character_count(text):
-    return len(text)
-
-def word_count(text):
-    return len(text.split())
-
-def sentence_count(text):
-    return text.count('.') + text.count('!') + text.count('?')
-
-def longest_word(text):
-    words = text.split()
-    return max(words, key=len)
-
-def shortest_word(text):
-    words = text.split()
-    return min(words, key=len)
-
-def average_word_length(text):
-    words = text.split()
-    return sum(len(word) for word in words) / len(words)
-
-def top_n_words(text, n=10):
-    word_counts = Counter(text.split())
-    return word_counts.most_common(n)
-
-def extract_hashtags(text):
-    return re.findall(r'#\w+', text)
-
-def extract_mentions(text):
-    return re.findall(r'@\w+', text)
-
-def top_n_sentences(text, n=3):
-    sentences = text.split('. ')
-    return sorted(sentences, key=len, reverse=True)[:n]
-
-def find_unique_words(text):
-    return set(text.split())
-
-def common_phrases(text, n=5):
-    phrases = re.findall(r'\b(\w+\s+\w+)\b', text)
-    return Counter(phrases).most_common(n)
-
-def keyword_extraction_tfidf(text):
-    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf_vectorizer.fit_transform([text])
-    feature_names = tfidf_vectorizer.get_feature_names_out()
-    dense = tfidf_matrix.todense()
-    denselist = dense.tolist()
-    return pd.DataFrame(denselist, columns=feature_names).T.sort_values(0, ascending=False).head(10)
-
+# Count Paragraphs
 def count_paragraphs(text):
-    return text.count('\n') + 1
+    return text.count("\n\n") + 1
 
+# Spelling Errors
 def check_spelling(text):
-    from spellchecker import SpellChecker
     spell = SpellChecker()
     words = text.split()
     misspelled = spell.unknown(words)
     return list(misspelled)
 
-def extract_dates(text):
-    return re.findall(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b', text)
+# Display Unique Words
+def find_unique_words(text):
+    words = set(text.split())
+    return list(words)
 
-def extract_time(text):
-    return re.findall(r'\b\d{1,2}:\d{2}\s*[AP]?[M]?\b', text)
-
-def text_to_uppercase(text):
-    return text.upper()
-
-def text_to_lowercase(text):
-    return text.lower()
-
-def text_title_case(text):
-    return text.title()
-
-def remove_special_characters(text):
-    return re.sub(r'[^\w\s]', '', text)
-
-def extract_citations(text):
-    return re.findall(r'\([^\)]+\)', text)
-
-def extract_references(text):
-    return re.findall(r'\[.*?\]', text)
-
-def count_links(text):
-    return len(extract_links(text))
-
-def count_emails(text):
-    return len(extract_emails(text))
-
+# Display Extracted Quotes
 def extract_quotes(text):
-    return re.findall(r'"(.*?)"', text)
+    quote_pattern = r'\"(.*?)\"'
+    return re.findall(quote_pattern, text)
 
-def find_most_common_char(text):
-    return Counter(text).most_common(1)
+# Extract Citations
+def extract_citations(text):
+    citation_pattern = r'\(\w+,\s*\d{4}\)'
+    return re.findall(citation_pattern, text)
 
-def text_statistics(text):
-    return {
-        "Character Count": character_count(text),
-        "Word Count": word_count(text),
-        "Sentence Count": sentence_count(text),
-        "Longest Word": longest_word(text),
-        "Shortest Word": shortest_word(text),
-        "Average Word Length": average_word_length(text)
-    }
+# Extract References
+def extract_references(text):
+    ref_pattern = r'([0-9]{1,2}\.\s.+?(\n|$))'
+    return re.findall(ref_pattern, text)
+
+# Special Character Removal
+def remove_special_characters(text):
+    return re.sub(r'[^A-Za-z0-9\s]', '', text)
 
 # Main application logic
 if uploaded_files:
     all_texts = []
     for uploaded_file in uploaded_files:
-        text = extract_text(uploaded_file)
-        all_texts.append(text)
+        try:
+            text = extract_text(uploaded_file)
+            all_texts.append(text)
+        except Exception as e:
+            st.error(f"Error processing file {uploaded_file.name}: {e}")
 
     full_text = "\n\n".join(all_texts)
-    
+
     # Text Analysis Section
     st.subheader("Extracted Text")
     st.write(full_text)
@@ -393,40 +314,53 @@ if uploaded_files:
     st.write(cleaned_text)
 
     # Text Statistics
-    stats = text_statistics(cleaned_text)
-    st.subheader("Text Statistics")
+    stats = calculate_complexity(cleaned_text)
+    st.subheader("Text Complexity")
     st.json(stats)
 
-    # Simple Sentiment Analysis
-    sentiment_score = simple_sentiment_analysis(cleaned_text)
-    st.subheader("Sentiment Analysis")
-    st.write(f"Sentiment Score: {sentiment_score}")
+    # Display reading time
+    display_reading_time(cleaned_text)
 
-    # Summary of Text
-    st.subheader("Text Summary")
-    summary = summarize_text(cleaned_text)
-    st.write(summary)
+    # Mood Color
+    display_text_with_mood_color(cleaned_text)
 
-    # Keyword Extraction using TF-IDF
-    st.subheader("Keyword Extraction")
-    df_tfidf = keyword_extraction_tfidf(cleaned_text)
-    st.write(df_tfidf)
+    # POS Tagging
+    display_pos_tagging(cleaned_text)
 
-    # Generate Word Cloud
+    # Gendered Language Analysis
+    display_gendered_language(cleaned_text)
+
+    # Sentiment by Section
+    display_section_sentiment(cleaned_text)
+
+    # Technical Jargon
+    display_jargon_finder(cleaned_text)
+
+    # Tone Detection
+    st.subheader("Tone Detection")
+    tone = detect_tone(cleaned_text)
+    st.write(f"Detected Tone: {tone}")
+
+    # Create and display presentation
+    display_presentation_generator(cleaned_text)
+
+    # Word Cloud
     st.subheader("Keyword Cloud")
     generate_word_cloud(cleaned_text)
 
-    # Email and Link Extraction
+    # Email Extraction
     st.subheader("Extracted Emails")
     emails = extract_emails(cleaned_text)
     st.write(emails)
-    st.write(f"Total Emails: {count_emails(cleaned_text)}")
+    st.write(f"Total Emails: {len(emails)}")
 
+    # Link Extraction
     st.subheader("Extracted Links")
     links = extract_links(cleaned_text)
     st.write(links)
-    st.write(f"Total Links: {count_links(cleaned_text)}")
+    st.write(f"Total Links: {len(links)}")
 
+    # Date Extraction
     st.subheader("Extracted Dates")
     dates = extract_dates(cleaned_text)
     st.write(dates)
@@ -434,7 +368,7 @@ if uploaded_files:
     # Frequency Distribution
     st.subheader("Top 10 Most Frequent Words")
     freq_words = word_frequency(cleaned_text)
-    plot_word_frequency(freq_words)
+    st.write(freq_words)
 
     # Unique Words
     st.subheader("Unique Words")
@@ -445,7 +379,7 @@ if uploaded_files:
     quotes = extract_quotes(cleaned_text)
     st.write(quotes)
 
-    # Check for spelling errors
+    # Spelling Errors
     st.subheader("Spelling Errors")
     spelling_errors = check_spelling(cleaned_text)
     st.write(spelling_errors)
@@ -467,11 +401,6 @@ if uploaded_files:
     # Special Character Removal
     st.subheader("Text without Special Characters")
     st.write(remove_special_characters(cleaned_text))
-
-    # Download processed text if needed
-    st.sidebar.subheader("Download Processed Text")
-    if st.sidebar.button("Download"):
-        st.sidebar.download_button("Download Cleaned Text", cleaned_text)
 
 # Sidebar Title
 st.sidebar.text("Document Analysis App")
