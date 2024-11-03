@@ -46,7 +46,6 @@ def extract_dates(text):
     return re.findall(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text)
 
 def extract_tables(text):
-    # Placeholder for table extraction logic
     return "Table extraction not implemented."
 
 def count_paragraphs(text):
@@ -67,7 +66,6 @@ def highlight_keywords(text, keywords):
     return text
 
 def generate_word_cloud(text):
-    # Placeholder for word cloud generation
     return "Word cloud generation not implemented."
 
 def create_summary_statistics(text):
@@ -277,17 +275,17 @@ if uploaded_file is not None:
     st.subheader("Repeated Phrases")
     st.write(find_repeated_phrases(text))
 
-    st.subheader("Keyword Extraction")
+    st.subheader("Extracted Keywords")
     st.write(extract_keywords_from_text(text))
 
     st.subheader("Summary of Text")
     st.write(generate_summary(text))
 
-    st.subheader("Text Replacements")
     replacements = st.text_input("Enter replacements (old:new, comma-separated):")
     if replacements:
         replacements_dict = dict(pair.split(':') for pair in replacements.split(','))
         replaced_text = replace_keywords(text, replacements_dict)
+        st.subheader("Text After Replacements")
         st.write(replaced_text)
 
     st.subheader("Extracted Code Blocks")
