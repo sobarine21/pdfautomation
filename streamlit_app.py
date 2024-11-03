@@ -11,7 +11,7 @@ import re
 from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
-from transformers import pipeline
+from transformers import T5Tokenizer
 from pptx import Presentation
 
 # Title and file uploader on the main page
