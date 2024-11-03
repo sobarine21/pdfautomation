@@ -12,9 +12,10 @@ from bs4 import BeautifulSoup
 import numpy as np
 import re
 import os
+from wordcloud import WordCloud
 
 # Set page configuration
-st.set_page_config(page_title="Advanced Document Analysis Platform", layout="wide")
+st.set_page_config(page_title="Ultimate Document Analysis Platform", layout="wide")
 
 # Sidebar for file upload
 st.sidebar.title("Upload Document")
@@ -50,26 +51,29 @@ def extract_text_from_html(file):
     soup = BeautifulSoup(file.read(), 'html.parser')
     return soup.get_text()
 
-# Additional utility functions
+# Text Cleaning
 def clean_text(text):
-    # Remove special characters and extra whitespace
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text)  # Remove extra whitespace
+    text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
     return text.strip()
 
+# Summarization
 def summarize_text(text, num_sentences=3):
-    # Basic summarization (this can be improved)
     sentences = text.split('. ')
     return '. '.join(sentences[:num_sentences])
 
-def extract_emails(text):
-    return re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+# Entity Recognition (simple version)
+def extract_entities(text):
+    blob = TextBlob(text)
+    return [(word, tag) for word, tag in blob.tags if tag in ['NNP', 'NNPS']]  # Proper nouns
 
-def extract_links(text):
-    return re.findall(r'https?://[^\s]+', text)
-
-def extract_numbers(text):
-    return re.findall(r'\d+', text)
+# Keyword Cloud Generation
+def generate_word_cloud(text):
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    st.pyplot(plt)
 
 # Main application logic
 if uploaded_files:
@@ -108,6 +112,15 @@ if uploaded_files:
     denselist = dense.tolist()
     df_tfidf = pd.DataFrame(denselist, columns=feature_names)
     st.write(df_tfidf.T.sort_values(0, ascending=False).head(10))
+
+    # Entity Recognition
+    st.subheader("Extracted Entities")
+    entities = extract_entities(cleaned_text)
+    st.write(entities)
+
+    # Generate Word Cloud
+    st.subheader("Keyword Cloud")
+    generate_word_cloud(cleaned_text)
 
     # Email and Link Extraction
     st.subheader("Extracted Emails")
