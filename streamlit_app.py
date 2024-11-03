@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 import fitz  # PyMuPDF for PDF processing
-from sklearn.feature_extraction.text import TfidfVectorizer
 import matplotlib.pyplot as plt
-import seaborn as sns
 from docx import Document
 from bs4 import BeautifulSoup
 import numpy as np
@@ -12,7 +10,8 @@ from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
-from spellchecker import SpellChecker
+from gtts import gTTS
+import os
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -29,7 +28,6 @@ def display_palindromes(text):
     st.write(", ".join(palindromes))
 
 def sentence_count(text):
-    # Counts the number of sentences in the text based on the presence of periods, exclamation marks, or question marks
     sentences = re.split(r'[.!?]+', text)
     return len([s for s in sentences if s.strip()])  # Return count of non-empty sentences
 
@@ -231,6 +229,12 @@ def generate_word_cloud(text):
     plt.axis('off')
     st.pyplot()
 
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='en')
+    audio_file_path = "output.mp3"
+    tts.save(audio_file_path)
+    return audio_file_path
+
 # Main logic
 if uploaded_files:
     for uploaded_file in uploaded_files:
@@ -248,6 +252,13 @@ if uploaded_files:
         display_jargon_finder(cleaned_text)
         display_style_analysis(cleaned_text)
 
+        # Text-to-Speech functionality
+        if st.button("Convert Text to Speech"):
+            audio_file = text_to_speech(cleaned_text)
+            with open(audio_file, "rb") as f:
+                st.audio(f.read(), format='audio/mp3')
+                st.download_button("Download Audio", f.read(), file_name="output.mp3")
+        
         if uploaded_file.type == "application/pdf":
             keywords = st.text_input("Enter keywords to highlight in PDF (comma separated):", key=f"keywords_{uploaded_file.name}")
             if keywords:
