@@ -1,3 +1,4 @@
+streamlit
 PyMuPDF
 pytesseract
 Pillow
@@ -7,4 +8,4 @@ matplotlib
 seaborn
 python-docx
 beautifulsoup4
-streamlit
+wordcloud
