@@ -4,7 +4,10 @@ import pandas as pd
 import re
 import numpy as np
 from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
+from textblob import TextBlob
 
+# Function to extract text from a PDF file
 def extract_text_from_pdf(pdf_file):
     text = ""
     with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
@@ -12,193 +15,110 @@ def extract_text_from_pdf(pdf_file):
             text += page.get_text()
     return text
 
+# Function to extract data into a DataFrame
 def extract_data(text):
     lines = text.splitlines()
     data = [{"Line": line.strip()} for line in lines if line.strip()]
     return pd.DataFrame(data)
 
+# Function to search for keywords
 def search_keywords(text, keywords):
     results = {keyword: len(re.findall(keyword, text, re.IGNORECASE)) for keyword in keywords}
     return results
 
+# Function to summarize text
 def summarize_text(text):
     return "\n".join(text.splitlines()[:5])
 
+# Function to clean text
 def clean_text(text):
     return re.sub(r'[^\w\s]', '', text)
 
+# Function to count words
 def count_words(text):
     return len(text.split())
 
+# Function to count sentences
 def count_sentences(text):
     return len(re.split(r'[.!?]+', text)) - 1
 
+# Function to count characters
+def count_characters(text):
+    return len(text)
+
+# Function to calculate reading time
+def calculate_reading_time(text):
+    words = count_words(text)
+    reading_speed = 200  # average reading speed (words per minute)
+    return round(words / reading_speed, 2)
+
+# Function to extract links
 def extract_links(text):
     return re.findall(r'https?://\S+', text)
 
+# Function to extract emails
 def extract_emails(text):
     return re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
 
+# Function to find phone numbers
 def find_phone_numbers(text):
     return re.findall(r'\+?\d[\d -]{8,12}\d', text)
 
+# Function to extract dates
 def extract_dates(text):
     return re.findall(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text)
 
-def extract_tables(text):
-    return "Table extraction not implemented."
-
-def count_paragraphs(text):
-    return len([p for p in text.split('\n\n') if p.strip()])
-
+# Function to extract unique words
 def extract_unique_words(text):
     words = text.split()
     unique_words = set(words)
     return list(unique_words)
 
+# Function to calculate sentiment of text
+def calculate_sentiment(text):
+    analysis = TextBlob(text)
+    return analysis.sentiment.polarity
+
+# Function to extract top N keywords using TF-IDF
+def extract_top_n_keywords(text, n=10):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform([text])
+    feature_names = vectorizer.get_feature_names_out()
+    tfidf_scores = tfidf_matrix.sum(axis=0).A1
+    top_n_indices = np.argsort(tfidf_scores)[-n:][::-1]
+    return {feature_names[i]: tfidf_scores[i] for i in top_n_indices}
+
+# Function to count paragraphs
+def count_paragraphs(text):
+    return len([p for p in text.split('\n\n') if p.strip()])
+
+# Function to calculate frequency distribution
 def frequency_distribution(text):
     words = text.split()
     return Counter(words).most_common(10)
 
+# Function to highlight keywords
 def highlight_keywords(text, keywords):
     for keyword in keywords:
         text = re.sub(f'({keyword})', r'**\1**', text, flags=re.IGNORECASE)
     return text
 
-def generate_word_cloud(text):
-    return "Word cloud generation not implemented."
-
-def create_summary_statistics(text):
-    return {
-        "Word Count": count_words(text),
-        "Sentence Count": count_sentences(text),
-        "Paragraph Count": count_paragraphs(text),
-        "Unique Words": len(extract_unique_words(text))
-    }
-
-def convert_df_to_csv(df):
-    return df.to_csv(index=False).encode('utf-8')
-
-def get_top_n_words(text, n=10):
-    words = text.split()
-    most_common = Counter(words).most_common(n)
-    return dict(most_common)
-
-def extract_n_grams(text, n=2):
-    words = text.split()
-    n_grams = zip(*[words[i:] for i in range(n)])
-    return [' '.join(n_gram) for n_gram in n_grams]
-
-def replace_text(text, old, new):
-    return text.replace(old, new)
-
-def split_text_into_sentences(text):
-    return re.split(r'(?<=[.!?]) +', text)
-
+# Function to calculate readability
 def calculate_readability(text):
     words = count_words(text)
     sentences = count_sentences(text)
-    return 206.835 - (1.015 * (words / sentences)) - (84.6 * (len(text.split('\n')) / sentences))
-
-# New Functions
-def extract_headings(text):
-    return [line for line in text.splitlines() if line.isupper() and line.strip()]
-
-def count_images(pdf_file):
-    with fitz.open(pdf_file) as doc:
-        return sum(1 for page in doc for img in page.get_images(full=True))
-
-def extract_image_metadata(pdf_file):
-    images_metadata = []
-    with fitz.open(pdf_file) as doc:
-        for page in doc:
-            for img in page.get_images(full=True):
-                images_metadata.append({"page": page.number, "image_index": img[0], "image_xref": img[1]})
-    return images_metadata
-
-def find_repeated_phrases(text, phrase_length=3):
-    words = text.split()
-    phrases = [' '.join(words[i:i + phrase_length]) for i in range(len(words) - phrase_length + 1)]
-    return Counter(phrases).most_common()
-
-def extract_keywords_from_text(text):
-    words = text.split()
-    return Counter(words).most_common(20)
-
-def generate_summary(text):
-    return '. '.join(text.split('. ')[:3])
-
-def replace_keywords(text, replacements):
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-    return text
-
-def extract_sentiment(text):
-    return "Sentiment analysis not implemented."
-
-def get_characters_count(text):
-    return len(text)
-
-def extract_code_blocks(text):
-    return re.findall(r'```(.*?)```', text, re.DOTALL)
-
-def count_words_by_length(text):
-    word_lengths = Counter(len(word) for word in text.split())
-    return dict(word_lengths)
-
-def create_word_frequency_chart(word_freq):
-    return "Word frequency chart generation not implemented."
-
-def identify_references(text):
-    return re.findall(r'\[(.*?)\]', text)
-
-def extract_section_titles(text):
-    return [line for line in text.splitlines() if line.startswith('#')]
-
-def extract_all_tables(text):
-    return "All tables extraction not implemented."
-
-def count_unique_phrases(text, phrase_length=2):
-    words = text.split()
-    phrases = [' '.join(words[i:i + phrase_length]) for i in range(len(words) - phrase_length + 1)]
-    return len(set(phrases))
-
-def calculate_average_word_length(text):
-    words = text.split()
-    return sum(len(word) for word in words) / len(words) if words else 0
-
-def convert_text_to_uppercase(text):
-    return text.upper()
-
-def find_acronyms(text):
-    return re.findall(r'\b[A-Z]{2,}\b', text)
-
-def extract_keywords_with_context(text, keywords):
-    context_size = 10
-    context = {}
-    for keyword in keywords:
-        matches = re.finditer(r'(\S+\s+){0,10}(' + re.escape(keyword) + r')(\s+\S+){0,10}', text, re.IGNORECASE)
-        context[keyword] = [match.group(0) for match in matches]
-    return context
-
-def get_pdf_metadata(pdf_file):
-    with fitz.open(pdf_file) as doc:
-        return doc.metadata
-
-def identify_duplicates(text):
-    lines = text.splitlines()
-    return [line for line, count in Counter(lines).items() if count > 1]
-
-def get_word_lengths_distribution(text):
-    word_lengths = [len(word) for word in text.split()]
-    return Counter(word_lengths)
-
-def validate_email_addresses(emails):
-    return [email for email in emails if re.match(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', email)]
+    paragraphs = count_paragraphs(text)
+    
+    if sentences > 0:
+        readability_score = 206.835 - (1.015 * (words / sentences)) - (84.6 * (paragraphs / sentences))
+    else:
+        readability_score = float('inf')
+    
+    return readability_score
 
 # Streamlit UI
-st.title("Comprehensive PDF Data Extraction SaaS")
-st.write("Upload a PDF file to extract data.")
+st.title("Advanced PDF Data Extraction and Analysis")
+st.write("Upload a PDF file to extract and analyze data.")
 
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
@@ -229,7 +149,16 @@ if uploaded_file is not None:
     st.write(clean_text(text))
 
     st.subheader("Text Statistics")
-    stats = create_summary_statistics(text)
+    stats = {
+        "Word Count": count_words(text),
+        "Character Count": count_characters(text),
+        "Sentence Count": count_sentences(text),
+        "Paragraph Count": count_paragraphs(text),
+        "Unique Words": len(extract_unique_words(text)),
+        "Reading Time (minutes)": calculate_reading_time(text),
+        "Readability Score": calculate_readability(text),
+        "Sentiment Polarity": calculate_sentiment(text)
+    }
     st.write(stats)
 
     st.subheader("Extracted Links")
@@ -244,9 +173,9 @@ if uploaded_file is not None:
     st.subheader("Extracted Dates")
     st.write(extract_dates(text))
 
-    st.subheader("Top N Words")
-    top_words = get_top_n_words(text)
-    st.write(top_words)
+    st.subheader("Top N Keywords")
+    top_n_keywords = extract_top_n_keywords(text)
+    st.write(top_n_keywords)
 
     st.subheader("Frequency Distribution of Words")
     freq_dist = frequency_distribution(text)
@@ -255,53 +184,23 @@ if uploaded_file is not None:
     st.subheader("Unique Words")
     st.write(extract_unique_words(text))
 
+    st.subheader("Extracted Dates")
+    st.write(extract_dates(text))
+
     st.subheader("Sentence Splitting")
-    sentences = split_text_into_sentences(text)
+    sentences = re.split(r'(?<=[.!?]) +', text)
     st.write(sentences)
 
-    st.subheader("Readability Score")
-    readability = calculate_readability(text)
-    st.write(f"Readability Score: {readability:.2f}")
+    st.subheader("Extracted Tables")
+    st.write("Table extraction not implemented.")
 
-    st.subheader("Headings")
-    st.write(extract_headings(text))
+    st.subheader("Word Cloud")
+    st.write("Word cloud generation not implemented.")
 
-    st.subheader("Image Count")
-    st.write(count_images(uploaded_file))
-
-    st.subheader("Image Metadata")
-    st.write(extract_image_metadata(uploaded_file))
-
-    st.subheader("Repeated Phrases")
-    st.write(find_repeated_phrases(text))
-
-    st.subheader("Extracted Keywords")
-    st.write(extract_keywords_from_text(text))
-
-    st.subheader("Summary of Text")
-    st.write(generate_summary(text))
-
-    replacements = st.text_input("Enter replacements (old:new, comma-separated):")
-    if replacements:
-        replacements_dict = dict(pair.split(':') for pair in replacements.split(','))
-        replaced_text = replace_keywords(text, replacements_dict)
-        st.subheader("Text After Replacements")
-        st.write(replaced_text)
-
-    st.subheader("Extracted Code Blocks")
-    st.write(extract_code_blocks(text))
-
-    st.subheader("Average Word Length")
-    avg_word_length = calculate_average_word_length(text)
-    st.write(f"Average Word Length: {avg_word_length:.2f}")
-
-    csv = convert_df_to_csv(data_df)
+    csv = data_df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="Download extracted data as CSV",
         data=csv,
         file_name='extracted_data.csv',
         mime='text/csv'
     )
-
-    st.write(extract_tables(text))
-    st.write(generate_word_cloud(text))
