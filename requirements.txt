@@ -5,3 +5,4 @@ re
 numpy
 collections 
 Counter
+PyMuPDF
