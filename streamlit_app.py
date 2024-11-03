@@ -10,14 +10,6 @@ import numpy as np
 import re
 from wordcloud import WordCloud
 from collections import Counter
-import nltk
-from nltk import pos_tag, word_tokenize
-from nltk.corpus import stopwords
-
-# Uncomment these lines if you are running NLTK for the first time
-# nltk.download('punkt')
-# nltk.download('averaged_perceptron_tagger')
-# nltk.download('stopwords')
 
 # Set page configuration
 st.set_page_config(page_title="Ultimate Document Analysis Platform", layout="wide")
@@ -104,14 +96,18 @@ def word_frequency(text):
     word_counts = Counter(words)
     return word_counts.most_common(10)
 
-# Part-of-Speech Tagging
-def pos_tagging(text):
-    words = word_tokenize(text)
-    return pos_tag(words)
+# Simple Word Tagging (Simulated)
+def simple_pos_tagging(text):
+    words = text.split()
+    tagged = [(word, 'NN' if word[0].isupper() else 'NNP') for word in words]  # Basic tagging for demonstration
+    return tagged
 
 # Stop Words Removal
 def remove_stopwords(text):
-    stop_words = set(stopwords.words('english'))
+    stop_words = set([
+        'the', 'is', 'in', 'and', 'to', 'with', 'that', 'of', 'a', 'for', 'on', 
+        'it', 'as', 'was', 'at', 'by', 'an', 'be', 'this', 'which', 'or', 'are'
+    ])
     words = text.split()
     filtered_words = [word for word in words if word.lower() not in stop_words]
     return ' '.join(filtered_words)
@@ -181,9 +177,9 @@ if uploaded_files:
     word_counts = word_frequency(cleaned_text)
     plot_word_frequency(word_counts)
 
-    # Part-of-Speech Tagging
-    st.subheader("Part-of-Speech Tagging")
-    pos_tags = pos_tagging(cleaned_text)
+    # Simple Word Tagging
+    st.subheader("Simple Word Tagging")
+    pos_tags = simple_pos_tagging(cleaned_text)
     st.write(pos_tags)
 
     # Stop Words Removal
