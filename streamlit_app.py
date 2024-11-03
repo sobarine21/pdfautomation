@@ -28,6 +28,10 @@ def display_palindromes(text):
     st.subheader("Palindromic Words")
     st.write(", ".join(palindromes))
 
+def sentence_count(text):
+    # Simple sentence counting based on '.', '!', and '?'
+    return text.count('.') + text.count('!') + text.count('?')
+
 def calculate_complexity(text):
     sentences = sentence_count(text)
     avg_sentence_length = len(text.split()) / sentences if sentences > 0 else 0
@@ -69,9 +73,8 @@ def display_reading_time(text):
 
 def pos_tagging(text):
     # Assumes 'nlp' is defined; you might need to integrate a model here
-    doc = nlp(text)  
-    pos_counts = Counter([token.pos_ for token in doc])
-    return pos_counts
+    # Example placeholder for demonstration
+    return Counter([word for word in text.split()])  
 
 def display_pos_tagging(text):
     st.subheader("Part-of-Speech Analysis")
@@ -111,7 +114,7 @@ def display_section_sentiment(text):
     sentiment_by_section(text)
 
 def find_jargon(text):
-    common_words = set(textstat.lexicon_count(text, removepunct=True))
+    common_words = set(text.split())  # Assuming common words are any words in the text
     technical_words = set(word for word in text.split() if len(word) > 7 and word not in common_words)
     return technical_words
 
@@ -207,7 +210,7 @@ def clean_text(text):
 # Text Statistics
 def text_statistics(text):
     word_count = len(text.split())
-    sentence_count = text.count('.') + text.count('!') + text.count('?')
+    sentence_count = sentence_count(text)
     character_count = len(text)
     return {
         "Word Count": word_count,
@@ -226,12 +229,10 @@ def simple_sentiment_analysis(text):
     positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'correct', 'superior'])
     negative_words = set(['bad', 'poor', 'terrible', 'negative', 'unfortunate', 'wrong', 'inferior'])
     
-    positive_count = sum(1 for word in words if word in positive_words)
-    negative_count = sum(1 for word in words if word in negative_words)
-    
-    return positive_count - negative_count
+    score = sum(1 for word in words if word in positive_words) - sum(1 for word in words if word in negative_words)
+    return score
 
-# Keyword Extraction using TF-IDF
+# Extraction using TF-IDF
 @st.cache
 def keyword_extraction_tfidf(text):
     tfidf_vectorizer = TfidfVectorizer(stop_words='english')
