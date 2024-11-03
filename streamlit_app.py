@@ -12,8 +12,8 @@ from wordcloud import WordCloud
 from collections import Counter
 from textstat import flesch_reading_ease
 from pptx import Presentation
-from spellchecker import SpellChecker
 import spacy
+from spellchecker import SpellChecker
 
 # Load the English NLP model
 nlp = spacy.load("en_core_web_sm")
@@ -115,8 +115,8 @@ def display_section_sentiment(text):
     sentiment_by_section(text)
 
 def find_jargon(text):
-    common_words = set(textstat.lexicon_count(text, removepunct=True))
-    technical_words = set(word for word in text.split() if len(word) > 7 and word not in common_words)
+    common_words = set(nlp.Defaults.stop_words)
+    technical_words = set(word for word in text.split() if len(word) > 7 and word.lower() not in common_words)
     return technical_words
 
 def display_jargon_finder(text):
@@ -134,19 +134,14 @@ def detect_tone(text):
 
 def create_presentation_from_text(text):
     prs = Presentation()
-    slides = text.split('\n\n')  # Splitting text into slides by paragraphs
+    slides = text.split('\n\n')
     for slide_content in slides:
         slide = prs.slides.add_slide(prs.slide_layouts[1])
-        title, content = slide_content[:30], slide_content[30:]  # First 30 chars as title
+        title, content = slide_content[:30], slide_content[30:]  
         slide.shapes.title.text = title
         slide.placeholders[1].text = content
     prs.save("generated_presentation.pptx")
     return "generated_presentation.pptx"
-
-def display_presentation_generator(text):
-    st.subheader("Presentation Generator")
-    presentation_path = create_presentation_from_text(text)
-    st.download_button("Download Generated Presentation", presentation_path)
 
 def highlight_text_in_pdf(pdf_path, keywords):
     doc = fitz.open(pdf_path)
@@ -155,7 +150,7 @@ def highlight_text_in_pdf(pdf_path, keywords):
             text_instances = page.search_for(keyword)
             for inst in text_instances:
                 page.add_highlight_annot(inst)
-    annotated_pdf_path = "annotated_" + pdf_path.name
+    annotated_pdf_path = "annotated_" + pdf_path
     doc.save(annotated_pdf_path)
     return annotated_pdf_path
 
@@ -238,169 +233,47 @@ def generate_word_cloud(text):
 
 # Updated Email Extraction
 def extract_emails(text):
-    email_pattern = r'[\w\.-]+@[\w\.-]+\.\w+'
-    return re.findall(email_pattern, text)
+    emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+    return list(set(emails))
 
-# Updated Link Extraction
-def extract_links(text):
-    link_pattern = r'https?://[^\s]+'
-    return re.findall(link_pattern, text)
-
-# Updated Date Extraction
-def extract_dates(text):
-    date_pattern = r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b|\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b'
-    return re.findall(date_pattern, text)
-
-# Word Frequency
-def word_frequency(text):
-    words = text.split()
-    word_count = Counter(words)
-    return word_count.most_common(10)
-
-# Count Paragraphs
-def count_paragraphs(text):
-    return text.count("\n\n") + 1
-
-# Spelling Errors
-def check_spelling(text):
-    spell = SpellChecker()
-    words = text.split()
-    misspelled = spell.unknown(words)
-    return list(misspelled)
-
-# Display Unique Words
-def find_unique_words(text):
-    words = set(text.split())
-    return list(words)
-
-# Display Extracted Quotes
-def extract_quotes(text):
-    quote_pattern = r'\"(.*?)\"'
-    return re.findall(quote_pattern, text)
-
-# Extract Citations
-def extract_citations(text):
-    citation_pattern = r'\(\w+,\s*\d{4}\)'
-    return re.findall(citation_pattern, text)
-
-# Extract References
-def extract_references(text):
-    ref_pattern = r'([0-9]{1,2}\.\s.+?(\n|$))'
-    return re.findall(ref_pattern, text)
-
-# Special Character Removal
-def remove_special_characters(text):
-    return re.sub(r'[^A-Za-z0-9\s]', '', text)
-
-# Main application logic
+# Main Analysis Loop
 if uploaded_files:
-    all_texts = []
     for uploaded_file in uploaded_files:
-        try:
-            text = extract_text(uploaded_file)
-            all_texts.append(text)
-        except Exception as e:
-            st.error(f"Error processing file {uploaded_file.name}: {e}")
+        text = extract_text(uploaded_file)
+        cleaned_text = clean_text(text)
+        
+        st.subheader("Extracted Text")
+        st.write(cleaned_text)
 
-    full_text = "\n\n".join(all_texts)
+        display_palindromes(cleaned_text)
+        display_complexity(cleaned_text)
+        display_reading_time(cleaned_text)
+        display_pos_tagging(cleaned_text)
+        display_gendered_language(cleaned_text)
+        display_jargon_finder(cleaned_text)
+        display_style_analysis(cleaned_text)
+        display_section_sentiment(cleaned_text)
+        display_text_with_mood_color(cleaned_text)
+        
+        # Presentation Generation
+        if st.button('Generate Presentation'):
+            presentation_file = create_presentation_from_text(cleaned_text)
+            st.success(f"Presentation created: {presentation_file}")
+        
+        # Word Cloud Generation
+        generate_word_cloud(cleaned_text)
 
-    # Text Analysis Section
-    st.subheader("Extracted Text")
-    st.write(full_text)
+        # Email Extraction
+        emails = extract_emails(cleaned_text)
+        st.subheader("Extracted Emails")
+        st.write(", ".join(emails))
 
-    # Cleaned Text
-    cleaned_text = clean_text(full_text)
-    st.subheader("Cleaned Text")
-    st.write(cleaned_text)
+        # PDF Annotation
+        if uploaded_file.type == "application/pdf":
+            keywords = st.text_input("Enter keywords to highlight in PDF:")
+            if keywords:
+                keywords_list = keywords.split(',')
+                display_pdf_with_annotations(uploaded_file.name, keywords_list)
 
-    # Text Statistics
-    stats = calculate_complexity(cleaned_text)
-    st.subheader("Text Complexity")
-    st.json(stats)
-
-    # Display reading time
-    display_reading_time(cleaned_text)
-
-    # Mood Color
-    display_text_with_mood_color(cleaned_text)
-
-    # POS Tagging
-    display_pos_tagging(cleaned_text)
-
-    # Gendered Language Analysis
-    display_gendered_language(cleaned_text)
-
-    # Sentiment by Section
-    display_section_sentiment(cleaned_text)
-
-    # Technical Jargon
-    display_jargon_finder(cleaned_text)
-
-    # Tone Detection
-    st.subheader("Tone Detection")
-    tone = detect_tone(cleaned_text)
-    st.write(f"Detected Tone: {tone}")
-
-    # Create and display presentation
-    display_presentation_generator(cleaned_text)
-
-    # Word Cloud
-    st.subheader("Keyword Cloud")
-    generate_word_cloud(cleaned_text)
-
-    # Email Extraction
-    st.subheader("Extracted Emails")
-    emails = extract_emails(cleaned_text)
-    st.write(emails)
-    st.write(f"Total Emails: {len(emails)}")
-
-    # Link Extraction
-    st.subheader("Extracted Links")
-    links = extract_links(cleaned_text)
-    st.write(links)
-    st.write(f"Total Links: {len(links)}")
-
-    # Date Extraction
-    st.subheader("Extracted Dates")
-    dates = extract_dates(cleaned_text)
-    st.write(dates)
-
-    # Frequency Distribution
-    st.subheader("Top 10 Most Frequent Words")
-    freq_words = word_frequency(cleaned_text)
-    st.write(freq_words)
-
-    # Unique Words
-    st.subheader("Unique Words")
-    st.write(find_unique_words(cleaned_text))
-
-    # Quotes
-    st.subheader("Extracted Quotes")
-    quotes = extract_quotes(cleaned_text)
-    st.write(quotes)
-
-    # Spelling Errors
-    st.subheader("Spelling Errors")
-    spelling_errors = check_spelling(cleaned_text)
-    st.write(spelling_errors)
-
-    # Paragraph Count
-    st.subheader("Paragraph Count")
-    st.write(count_paragraphs(cleaned_text))
-
-    # Citations
-    st.subheader("Extracted Citations")
-    citations = extract_citations(cleaned_text)
-    st.write(citations)
-
-    # References
-    st.subheader("Extracted References")
-    references = extract_references(cleaned_text)
-    st.write(references)
-
-    # Special Character Removal
-    st.subheader("Text without Special Characters")
-    st.write(remove_special_characters(cleaned_text))
-
-# Sidebar Title
-st.sidebar.text("Document Analysis App")
+# To run the app, save this code to a file named 'app.py' and execute:
+# streamlit run app.py
