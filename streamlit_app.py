@@ -15,8 +15,12 @@ from pptx import Presentation
 import spacy
 from spellchecker import SpellChecker
 
-# Load the English NLP model
-nlp = spacy.load("en_core_web_sm")
+# Attempt to load the English NLP model
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    st.error("SpaCy model 'en_core_web_sm' not found. Please install it using 'python -m spacy download en_core_web_sm'.")
+    st.stop()
 
 # Title and file uploader on the main page
 st.title("Document Analysis App")
@@ -226,26 +230,21 @@ def extract_text_from_html(file):
 # Text Cleaning
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # Remove extra whitespace
-    text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
+    text = re.sub(r'\n+', ' ', text)  # Remove newlines
     return text.strip()
 
-# Summarization of text
-def summarize_text(text, num_sentences=3):
-    sentences = text.split('. ')
-    return '. '.join(sentences[:num_sentences])
-
-# Simple sentiment analysis
+# Simple sentiment analysis based on word counts
 def simple_sentiment_analysis(text):
-    words = text.split()
-    positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'correct', 'superior'])
+    positive_words = set(['good', 'great', 'excellent', 'positive', 'fortunate', 'well', 'super'])
     negative_words = set(['bad', 'poor', 'terrible', 'negative', 'unfortunate', 'wrong', 'inferior'])
     
+    words = text.lower().split()
     positive_count = sum(1 for word in words if word in positive_words)
     negative_count = sum(1 for word in words if word in negative_words)
     
     return positive_count - negative_count
 
-# Keyword Cloud Generation
+# Word Cloud Generation
 def generate_word_cloud(text):
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     plt.figure(figsize=(10, 5))
